@@ -2,8 +2,8 @@ import { API } from './api';
 import { DEFAULT_CONFIG, DEFAULT_SEED } from './constants';
 import { Monet } from './theme';
 
-// Import all locale JSONs. Vite will handle this.
-const localeModules = import.meta.glob('../locales/*.json');
+// Load all locale JSONs eagerly to avoid conflict with NavBar and simplify sync access
+const localeModules = import.meta.glob('../locales/*.json', { eager: true });
 
 // Global state using Svelte 5 Runes
 export const store = $state({
@@ -22,6 +22,20 @@ export const store = $state({
   lang: 'en',
   seed: DEFAULT_SEED,
   loadedLocale: null, // Stores the content of the loaded JSON
+
+  // Computed: Available languages list for UI
+  get availableLanguages() {
+    return Object.entries(localeModules).map(([path, mod]) => {
+      const match = path.match(/\/([^/]+)\.json$/);
+      const code = match ? match[1] : 'en';
+      const name = mod.default?.lang?.display || code.toUpperCase();
+      return { code, name };
+    }).sort((a, b) => {
+      if (a.code === 'en') return -1;
+      if (b.code === 'en') return 1;
+      return a.code.localeCompare(b.code);
+    });
+  },
 
   // Getters
   get L() {
@@ -68,7 +82,8 @@ export const store = $state({
     const path = `../locales/${code}.json`;
     if (localeModules[path]) {
       try {
-        const mod = await localeModules[path]();
+        // Since we loaded eagerly, we can just access .default
+        const mod = localeModules[path];
         this.loadedLocale = mod.default; 
         this.lang = code;
         localStorage.setItem('mm-lang', code);

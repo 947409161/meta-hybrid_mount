@@ -6,11 +6,11 @@
   let { activeTab, onTabChange } = $props();
   let showLangMenu = $state(false);
   
-  // Refs
-  let navContainer;
-  let langButtonRef;
-  let menuRef;
-  let tabRefs = {};
+  // Refs must be reactive in Svelte 5 for bind:this to work cleanly with reactivity
+  let navContainer = $state();
+  let langButtonRef = $state();
+  let menuRef = $state();
+  let tabRefs = $state({});
 
   const TABS = [
     { id: 'status', icon: ICONS.home },
@@ -18,27 +18,6 @@
     { id: 'modules', icon: ICONS.modules },
     { id: 'logs', icon: ICONS.description }
   ];
-
-  // Dynamically load all locale JSON files to extract available languages and display names.
-  // "eager: true" loads the content immediately, allowing us to read the "lang.display" field.
-  const localeModules = import.meta.glob('../locales/*.json', { eager: true });
-  
-  const languages = Object.entries(localeModules).map(([path, mod]) => {
-    // Extract language code from filename (e.g., "../locales/zhs.json" -> "zhs")
-    const match = path.match(/\/([^/]+)\.json$/);
-    const code = match ? match[1] : 'en';
-    
-    // Extract display name from the JSON content (mod.default is the JSON object)
-    // Fallback to uppercase code if display name is missing
-    const name = mod.default?.lang?.display || code.toUpperCase();
-    
-    return { code, name };
-  }).sort((a, b) => {
-    // Optional: Keep English at the top, sort others alphabetically
-    if (a.code === 'en') return -1;
-    if (b.code === 'en') return 1;
-    return a.code.localeCompare(b.code);
-  });
 
   $effect(() => {
     if (activeTab && tabRefs[activeTab] && navContainer) {
@@ -96,7 +75,7 @@
   
   {#if showLangMenu}
     <div class="menu-dropdown" bind:this={menuRef}>
-      {#each languages as l}
+      {#each store.availableLanguages as l}
         <button class="menu-item" onclick={() => setLang(l.code)}>{l.name}</button>
       {/each}
     </div>

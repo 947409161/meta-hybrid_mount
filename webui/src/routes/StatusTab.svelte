@@ -7,27 +7,55 @@
   onMount(() => {
     store.loadStatus();
   });
+
+  function handleReboot() {
+    if (confirm("Reboot device?")) {
+        API.rebootDevice();
+    }
+  }
+
+  function copyDebugInfo() {
+    const info = `Magic Mount v${store.version}\n` +
+                 `Model: ${store.device.model}\n` +
+                 `Android: ${store.device.android}\n` +
+                 `Kernel: ${store.device.kernel}\n` +
+                 `SELinux: ${store.device.selinux}`;
+    navigator.clipboard.writeText(info);
+    store.showToast(store.L.logs.copySuccess, 'success');
+  }
 </script>
 
 <div class="dashboard-grid">
-  <div class="storage-card">
-    <div class="storage-header">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span class="storage-title">{store.L.status.storageTitle}</span>
+  <div class="device-card">
+    <div class="device-header">
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <span class="device-title">{store.L.status.deviceTitle}</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span class="device-model">{store.device.model}</span>
+            <span class="version-badge">v{store.version}</span>
+        </div>
       </div>
       
-      <div class="storage-value">
-        {store.storage.percent}
-      </div>
+      <button class="btn-icon" onclick={copyDebugInfo} title={store.L.status.copy}>
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d={ICONS.copy} fill="currentColor"/></svg>
+      </button>
     </div>
     
-    <div class="progress-track">
-      <div class="progress-fill" style="width: {store.storage.percent}"></div>
-    </div>
-
-    <div class="storage-details">
-      <span>{store.L.status.storageDesc}</span>
-      <span>{store.storage.used} / {store.storage.size}</span>
+    <div class="device-info-grid">
+        <div class="info-item">
+            <span class="info-label">{store.L.status.androidLabel}</span>
+            <span class="info-val">{store.device.android}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">{store.L.status.selinuxLabel}</span>
+            <span class="info-val" class:warn={store.device.selinux !== 'Enforcing'}>
+                {store.device.selinux}
+            </span>
+        </div>
+        <div class="info-item" style="grid-column: span 2;">
+            <span class="info-label">{store.L.status.kernelLabel}</span>
+            <span class="info-val mono">{store.device.kernel}</span>
+        </div>
     </div>
   </div>
 
@@ -45,6 +73,9 @@
 
 <div class="bottom-actions">
   <div style="flex:1"></div>
+  <button class="btn-filled" onclick={handleReboot}>
+    {store.L.status.reboot}
+  </button>
   <button 
     class="btn-tonal" 
     onclick={() => store.loadStatus()} 

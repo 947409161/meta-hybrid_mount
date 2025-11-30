@@ -1,6 +1,8 @@
 import { exec } from 'kernelsu';
 import { DEFAULT_CONFIG, PATHS } from './constants';
 
+// ... (keep helper functions: isTrueValue, stripQuotes, parseKvConfig, serializeKvConfig) ...
+// (Omitting them here to save space, but keep them in your file)
 function isTrueValue(v) {
   const s = String(v).trim().toLowerCase();
   return s === '1' || s === 'true' || s === 'yes' || s === 'on';
@@ -98,7 +100,6 @@ export const API = {
 
   saveConfig: async (config) => {
     const content = serializeKvConfig(config);
-    // Escape single quotes for shell string
     const safeContent = content.replace(/'/g, "'\\''");
     
     const cmd = `
@@ -115,7 +116,6 @@ EOF_CONFIG
 
   scanModules: async (moduleDir = DEFAULT_CONFIG.moduledir) => {
     const cmd = `/data/adb/modules/magic_mount_rs/meta-mm scan --json`;
-
     try {
       const { errno, stdout, stderr } = await exec(cmd);
       if (errno === 0 && stdout) {
@@ -150,23 +150,44 @@ EOF_CONFIG
     throw new Error(stderr || "Log file not found");
   },
 
-  getStorageUsage: async () => {
-    const cmd = `/data/adb/modules/magic_mount_rs/meta-mm storage`;
+  getDeviceStatus: async () => {
+    const cmd = `
+      echo "model=$(getprop ro.product.model)"
+      echo "android=$(getprop ro.build.version.release)"
+      echo "kernel=$(uname -r)"
+      echo "selinux=$(getenforce)"
+    `;
     try {
-      const { errno, stdout, stderr } = await exec(cmd);
+      const { errno, stdout } = await exec(cmd);
       if (errno === 0 && stdout) {
-        try {
-          return JSON.parse(stdout);
-        } catch (e) {
-          console.error("JSON parse error for storage:", e);
+        const lines = stdout.split('\n');
+        const result = {};
+        for (const line of lines) {
+            const [key, val] = line.split('=');
+            if (key && val) result[key.trim()] = val.trim();
         }
-      } else {
-        console.error("Storage command failed:", stderr);
+        return result;
       }
     } catch (e) {
-      console.error("Storage check failed:", e);
+      console.error("Device status fetch failed:", e);
     }
-    return { size: '-', used: '-', percent: '0%', type: 'unknown' };
+    return { model: 'Unknown', android: '-', kernel: '-', selinux: 'Unknown' };
+  },
+
+  getVersion: async () => {
+    const cmd = `/data/adb/modules/magic_mount_rs/meta-mm version`;
+    try {
+      const { errno, stdout } = await exec(cmd);
+      if (errno === 0 && stdout) {
+        const res = JSON.parse(stdout);
+        return res.version || "0.0.0";
+      }
+    } catch (e) {}
+    return "Unknown";
+  },
+
+  rebootDevice: async () => {
+      await exec(`reboot`);
   },
 
   fetchSystemColor: async () => {

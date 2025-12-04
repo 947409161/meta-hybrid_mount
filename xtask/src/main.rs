@@ -74,7 +74,7 @@ fn update() -> Result<()> {
     let toml = fs::read_to_string("Cargo.toml")?;
     let data: CargoConfig = toml::from_str(&toml)?;
 
-    build()?;
+    //build()?;
 
     let json = UpdateJson {
         versioncode: cal_version_code(&data.package.version)?,

@@ -61,10 +61,14 @@ where
         if ret < 0 {
             use std::io;
 
-            log::error!("umount failed: {}", io::Error::last_os_error());
+            log::error!(
+                "umount {} failed: {}",
+                target.as_ref().display(),
+                io::Error::last_os_error()
+            );
         }
 
-        log::info!("umount successful!");
+        log::info!("umount {} successful!", target.as_ref().display());
     };
 
     Ok(())

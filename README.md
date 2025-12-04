@@ -67,5 +67,5 @@ cargo xtask b
 
 ## 许可证
 
-* https://www.gnu.org/licenses/gpl-3.0.html[GPL-3.0 license]
+* [GPL-3.0 license](https://www.gnu.org/licenses/gpl-3.0.html)
 

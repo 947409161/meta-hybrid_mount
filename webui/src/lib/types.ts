@@ -1,0 +1,61 @@
+export interface AppConfig {
+  moduledir: string;
+  tempdir: string;
+  mountsource: string;
+  verbose: boolean;
+  partitions: string[];
+  force_ext4: boolean;
+  enable_nuke: boolean;
+  disable_umount: boolean;
+  logfile?: string;
+}
+
+export interface Module {
+  id: string;
+  name: string;
+  version: string;
+  author: string;
+  description: string;
+  mode: 'auto' | 'magic';
+  enabled?: boolean;
+  source_path?: string;
+}
+
+export interface StorageStatus {
+  size: string;
+  used: string;
+  percent: string;
+  type: 'tmpfs' | 'ext4' | 'unknown' | null;
+  error?: string;
+}
+
+export interface SystemInfo {
+  kernel: string;
+  selinux: string;
+  mountBase: string;
+  activeMounts: string[];
+}
+
+export interface DeviceInfo {
+  model: string;
+  android: string;
+  kernel: string;
+  selinux: string;
+}
+
+export interface ToastMessage {
+  id: string;
+  text: string;
+  type: 'info' | 'success' | 'error';
+  visible: boolean;
+}
+
+export interface LanguageOption {
+  code: string;
+  name: string;
+}
+
+export interface ModeStats {
+  auto: number;
+  magic: number;
+}

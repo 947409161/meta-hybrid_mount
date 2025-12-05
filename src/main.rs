@@ -91,27 +91,14 @@ fn main() -> Result<()> {
     init_logger(config.verbose);
 
     log::info!("Magic Mount Starting");
-    log::info!("module dir      : {}", config.moduledir.display());
+
+    log::info!("config info:\n{config}");
 
     let tempdir = if let Some(temp) = config.tempdir {
-        log::info!("temp dir (cfg)  : {}", temp.display());
         temp
     } else {
-        let temp = utils::select_temp_dir().context("failed to select temp dir automatically")?;
-        log::info!("temp dir (auto) : {}", temp.display());
-        temp
+        utils::select_temp_dir().context("failed to select temp dir automatically")?
     };
-
-    log::info!("mount source    : {}", config.mountsource);
-    log::info!("verbose mode    : {}", config.verbose);
-    log::info!(
-        "extra partitions: {}",
-        if config.partitions.is_empty() {
-            "None".to_string()
-        } else {
-            format!("{:?}", config.partitions)
-        }
-    );
 
     utils::ensure_temp_dir(&tempdir)?;
 

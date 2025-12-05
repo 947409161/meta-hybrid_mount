@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf};
+use std::{fmt, fs, path::PathBuf};
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -34,6 +34,26 @@ impl Default for Config {
             verbose: false,
             umount: false,
             partitions: Vec::new(),
+        }
+    }
+}
+
+impl fmt::Display for Config {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "module real path: {}", self.moduledir.display())?;
+        if let Some(p) = self.tempdir.clone() {
+            writeln!(f, "temp dir will use: {}", p.display())?;
+        } else {
+            writeln!(f, "temp dir will use auto find temp")?;
+        }
+        writeln!(f, "mount source: {}", self.mountsource)?;
+        if self.verbose {
+            writeln!(f, "u enable debug mode!!")?;
+        }
+        if self.partitions.is_empty() {
+            write!(f, "no extra partitions")
+        } else {
+            write!(f, "extra partitions is {:?}", self.partitions)
         }
     }
 }

@@ -10,10 +10,12 @@
   const isValidPath = (p: string) => !p || (p.startsWith('/') && p.length > 1);
   let invalidModuleDir = $derived(!isValidPath(store.config.moduledir));
   let invalidTempDir = $derived(store.config.tempdir && !isValidPath(store.config.tempdir));
+
   let isDirty = $derived.by(() => {
     if (!initialConfigStr) return false;
     return JSON.stringify(store.config) !== initialConfigStr;
   });
+
   $effect(() => {
     if (!store.loading.config && store.config) {
       if (!initialConfigStr || initialConfigStr === JSON.stringify(DEFAULT_CONFIG)) {
@@ -21,6 +23,7 @@
       }
     }
   });
+
   function save() {
     if (invalidModuleDir || invalidTempDir) {
       store.showToast(store.L.config.invalidPath, "error");
@@ -41,6 +44,36 @@
     store.config.tempdir = "";
   }
 </script>
+
+<div class="md3-card">
+  <div class="text-field" class:error={invalidModuleDir}>
+    <input type="text" id="c-moduledir" bind:value={store.config.moduledir} placeholder={DEFAULT_CONFIG.moduledir} />
+    <label for="c-moduledir">{store.L.config.moduleDir}</label>
+  </div>
+  
+  <div class="text-field" class:error={invalidTempDir} style="display:flex; align-items:center;">
+    <input type="text" id="c-tempdir" bind:value={store.config.tempdir} placeholder={store.L.config.autoPlaceholder} />
+    <label for="c-tempdir">{store.L.config.tempDir}</label>
+    
+    {#if store.config.tempdir}
+      <button class="icon-reset" onclick={resetTempDir} title={store.L.config.reset}>
+        ✕
+      </button>
+    {/if}
+  </div>
+  
+  <div class="text-field">
+    <input type="text" id="c-mountsource" bind:value={store.config.mountsource} placeholder={DEFAULT_CONFIG.mountsource} />
+    <label for="c-mountsource">{store.L.config.mountSource}</label>
+  </div>
+  
+  <div style="position: relative; margin-top: 4px;">
+    <span style="font-size: 12px; color: var(--md-sys-color-primary); position: absolute; top: -9px; left: 12px; background: var(--md-sys-color-surface-container); padding: 0 4px; z-index: 1;">
+      {store.L.config.partitions}
+    </span>
+    <ChipInput bind:values={store.config.partitions} placeholder="mi_ext, product..." />
+  </div>
+</div>
 
 <div class="md3-card">
   <div class="switch-row">
@@ -81,36 +114,6 @@
       <input type="checkbox" bind:checked={store.config.disable_umount}>
       <span class="track"><span class="thumb"></span></span>
     </label>
-  </div>
-</div>
-
-<div class="md3-card">
-  <div class="text-field" class:error={invalidModuleDir}>
-    <input type="text" id="c-moduledir" bind:value={store.config.moduledir} placeholder={DEFAULT_CONFIG.moduledir} />
-    <label for="c-moduledir">{store.L.config.moduleDir}</label>
-  </div>
-  
-  <div class="text-field" class:error={invalidTempDir} style="display:flex; align-items:center;">
-    <input type="text" id="c-tempdir" bind:value={store.config.tempdir} placeholder={store.L.config.autoPlaceholder} />
-    <label for="c-tempdir">{store.L.config.tempDir}</label>
-    
-    {#if store.config.tempdir}
-      <button class="icon-reset" onclick={resetTempDir} title={store.L.config.reset}>
-        ✕
-      </button>
-    {/if}
-  </div>
-  
-  <div class="text-field">
-    <input type="text" id="c-mountsource" bind:value={store.config.mountsource} placeholder={DEFAULT_CONFIG.mountsource} />
-    <label for="c-mountsource">{store.L.config.mountSource}</label>
-  </div>
-  
-  <div style="position: relative; margin-top: 4px;">
-    <span style="font-size: 12px; color: var(--md-sys-color-primary); position: absolute; top: -9px; left: 12px; background: var(--md-sys-color-surface-container); padding: 0 4px; z-index: 1;">
-      {store.L.config.partitions}
-    </span>
-    <ChipInput bind:values={store.config.partitions} placeholder="mi_ext, product..." />
   </div>
 </div>
 

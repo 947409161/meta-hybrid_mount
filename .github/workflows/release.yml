@@ -88,11 +88,6 @@ jobs:
           
           # Update Cargo.toml
           sed -i "0,/^version = .*/s//version = \"$CLEAN_VER\"/" Cargo.toml
-          
-          # Update WebUI Store (Svelte 5 Runes syntax)
-          # Matches line: let version = $state('...');
-          # We replace the whole line to inject the tag name
-          sed -i "s/let version = .*/let version = \$state('$TAG_NAME');/" webui/src/lib/store.svelte.ts
 
       - name: Build Release Package
         run: |
@@ -152,7 +147,7 @@ jobs:
           mv /tmp/changelog.md changelog.md
           
           git add update.json changelog.md
-          git add module/module.prop Cargo.toml webui/src/lib/store.svelte.ts
+          git add module/module.prop Cargo.toml
           
           if ! git diff --staged --quiet; then
             git commit -m "chore(release): bump version to ${{ env.META_HYBRID_VERSION }} [skip ci]"

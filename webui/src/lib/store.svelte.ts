@@ -1,5 +1,6 @@
 import { API } from './api';
 import { DEFAULT_CONFIG, DEFAULT_SEED } from './constants';
+import { APP_VERSION } from './constants_gen';
 import { Monet } from './theme';
 import type { 
   AppConfig, 
@@ -12,7 +13,6 @@ import type {
   ModeStats
 } from './types';
 
-// Import all json files as modules
 const localeModules = import.meta.glob('../locales/*.json', { eager: true });
 
 export interface LogEntry {
@@ -21,7 +21,6 @@ export interface LogEntry {
 }
 
 const createStore = () => {
-  // --- UI State ---
   let theme = $state<'auto' | 'light' | 'dark'>('auto');
   let isSystemDark = $state(false);
   let lang = $state('en');
@@ -40,19 +39,16 @@ const createStore = () => {
     return a.code.localeCompare(b.code);
   });
 
-  // --- Data State ---
   let config = $state<AppConfig>({ ...DEFAULT_CONFIG });
   let modules = $state<Module[]>([]);
   let logs = $state<LogEntry[]>([]);
   
-  // --- Device/Status State ---
   let device = $state<DeviceInfo>({ model: 'Loading...', android: '-', kernel: '-', selinux: '-' });
-  let version = $state('v1.0.2-r3');
+  let version = $state(APP_VERSION);
   let storage = $state<StorageStatus>({ used: '-', size: '-', percent: '0%', type: null });
   let systemInfo = $state<SystemInfo>({ kernel: '-', selinux: '-', mountBase: '-', activeMounts: [] });
   let activePartitions = $state<string[]>([]);
 
-  // --- Loading/Saving Flags ---
   let loadingConfig = $state(false);
   let savingConfig = $state(false);
   let loadingModules = $state(false);
@@ -60,7 +56,6 @@ const createStore = () => {
   let loadingLogs = $state(false);
   let loadingStatus = $state(false);
 
-  // --- Derived ---
   function getFallbackLocale() {
     return {
         common: { appName: "Hybrid Mount", saving: "...", theme: "Theme", language: "Language", themeAuto: "Auto", themeLight: "Light", themeDark: "Dark" },
@@ -86,7 +81,6 @@ const createStore = () => {
     return { auto, magic };
   });
 
-  // --- Actions: UI ---
   function showToast(msg: string, type: 'info' | 'success' | 'error' = 'info') {
     const id = Date.now().toString();
     toast = { id, text: msg, type, visible: true };
@@ -150,11 +144,9 @@ const createStore = () => {
     }
     applyTheme();
 
-    // Initial data load
     await loadConfig();
   }
 
-  // --- Actions: Config ---
   async function loadConfig() {
     loadingConfig = true;
     try {
@@ -177,7 +169,6 @@ const createStore = () => {
     savingConfig = false;
   }
 
-  // --- Actions: Modules ---
   async function loadModules() {
     loadingModules = true;
     try {
@@ -199,7 +190,6 @@ const createStore = () => {
     savingModules = false;
   }
 
-  // --- Actions: Logs ---
   async function loadLogs(silent = false) {
     if (!silent) loadingLogs = true;
     try {
@@ -222,12 +212,14 @@ const createStore = () => {
     loadingLogs = false;
   }
 
-  // --- Actions: Status ---
   async function loadStatus() {
     loadingStatus = true;
     try {
       device = await API.getDeviceStatus();
       version = await API.getVersion();
+      if (version) {
+        version = version;
+      }
       storage = await API.getStorageUsage();
       systemInfo = await API.getSystemInfo();
       activePartitions = systemInfo.activeMounts || [];
@@ -240,7 +232,6 @@ const createStore = () => {
   }
 
   return {
-    // UI
     get theme() { return theme; },
     get isSystemDark() { return isSystemDark; },
     get lang() { return lang; },
@@ -254,24 +245,20 @@ const createStore = () => {
     setLang,
     init,
 
-    // Config
     get config() { return config; },
     set config(v) { config = v; },
     loadConfig,
     saveConfig,
 
-    // Modules
     get modules() { return modules; },
     set modules(v) { modules = v; },
     get modeStats() { return modeStats; },
     loadModules,
     saveModules,
 
-    // Logs
     get logs() { return logs; },
     loadLogs,
 
-    // Status
     get device() { return device; },
     get version() { return version; },
     get storage() { return storage; },
@@ -279,7 +266,6 @@ const createStore = () => {
     get activePartitions() { return activePartitions; },
     loadStatus,
 
-    // Loading/Saving states
     get loading() {
       return {
         config: loadingConfig,

@@ -61,12 +61,9 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Build the full project (WebUI + All Binaries + Zip)
     Build {
-        /// Build in release mode
         #[arg(long)]
         release: bool,
-        /// Skip WebUI build (for faster iteration)
         #[arg(long)]
         skip_webui: bool,
     },
@@ -99,9 +96,11 @@ fn build_full(root: &Path, release: bool, skip_webui: bool) -> Result<()> {
     if output_dir.exists() { fs::remove_dir_all(&output_dir)?; }
     fs::create_dir_all(&stage_dir)?;
 
+    let version = get_version(root)?;
+
     if !skip_webui {
         println!(":: Building WebUI...");
-        build_webui(root)?;
+        build_webui(root, &version)?;
     }
 
     let archs = [Arch::Arm64, Arch::X86_64, Arch::Riscv64];
@@ -133,7 +132,6 @@ fn build_full(root: &Path, release: bool, skip_webui: bool) -> Result<()> {
     let gitignore = stage_dir.join(".gitignore");
     if gitignore.exists() { fs::remove_file(gitignore)?; }
 
-    let version = get_version(root)?;
     println!(":: Injecting version: {}", version);
     update_module_prop(&stage_dir.join("module.prop"), &version)?;
 
@@ -153,8 +151,8 @@ fn build_full(root: &Path, release: bool, skip_webui: bool) -> Result<()> {
     Ok(())
 }
 
-fn build_webui(root: &Path) -> Result<()> {
-    generate_webui_constants(root)?;
+fn build_webui(root: &Path, version: &str) -> Result<()> {
+    generate_webui_constants(root, version)?;
 
     let webui_dir = root.join("webui");
     let npm = if cfg!(windows) { "npm.cmd" } else { "npm" };
@@ -174,19 +172,21 @@ fn build_webui(root: &Path) -> Result<()> {
     Ok(())
 }
 
-fn generate_webui_constants(root: &Path) -> Result<()> {
+fn generate_webui_constants(root: &Path, version: &str) -> Result<()> {
     let path = root.join("webui/src/lib/constants_gen.ts");
-    let content = r#"
-export const RUST_PATHS = {
+    let content = format!(r#"
+export const APP_VERSION = "{version}";
+
+export const RUST_PATHS = {{
   CONFIG: "/data/adb/meta-hybrid/config.toml",
   MODE_CONFIG: "/data/adb/meta-hybrid/module_mode.conf",
   IMAGE_MNT: "/data/adb/meta-hybrid/img_mnt",
   DAEMON_STATE: "/data/adb/meta-hybrid/run/daemon_state.json",
   DAEMON_LOG: "/data/adb/meta-hybrid/daemon.log",
-} as const;
+}} as const;
 
 export const BUILTIN_PARTITIONS = ["system", "vendor", "product", "system_ext", "odm", "oem", "apex"] as const;
-"#;
+"#);
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }

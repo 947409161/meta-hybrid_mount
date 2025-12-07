@@ -1,18 +1,16 @@
-## 1.0.3 - 2025-12-06
+## 1.2.0 - 2025-12-07
 
-**[View changes](https://github.com/Tools-cx-app/meta-magic_mount/compare/e558318fb11500ad47be6d66c0dcd1a5ae269860...1bd1ceabd827c36919e4acfd19c6e30331016b66)**(e558318...1bd1cea)
+**[View changes](https://github.com/Tools-cx-app/meta-magic_mount/compare/1bd1ceabd827c36919e4acfd19c6e30331016b66...7772e56c99f9cade25f28b407d9d37c14f89772a)**(1bd1cea...7772e56)
 
-### <!-- 0 -->🚀 Features
+### <!-- 2 -->🚜 Refactor
 
-- When target isn't linux/android, won't build try_umount([dcb4300](https://github.com/Tools-cx-app/meta-magic_mount/commit/dcb43004a6f4d31517cb12ae28ba73f2ddcd0dea))
-
-### <!-- 1 -->🐛 Bug Fixes
-
-- Localize google fonts dependency for accessibility in china(#13)([2d13b0a](https://github.com/Tools-cx-app/meta-magic_mount/commit/2d13b0abd595f446990219ac799b190b7fbfeff0))
+- Refactor do magic mount (#16)([fbf1501](https://github.com/Tools-cx-app/meta-magic_mount/commit/fbf1501111028965f1d0bdc3e48b20537eeda2de))
 
 ### <!-- 7 -->⚙️ Miscellaneous Tasks
 
-- Remove `#![allow(clippy::unreadable_literal)]`([c2b5647](https://github.com/Tools-cx-app/meta-magic_mount/commit/c2b564727b9f3146f1a0a2195adbdedf2094253e))
-- Remove some lint([ecfa73d](https://github.com/Tools-cx-app/meta-magic_mount/commit/ecfa73d44f8a6c19b1785b323131b871be7d8381))
+- Bump deps([2b49fcf](https://github.com/Tools-cx-app/meta-magic_mount/commit/2b49fcfa959377bf9681e1393cdb4b28a20240e3))
+- Make cargo clippy happy([705b023](https://github.com/Tools-cx-app/meta-magic_mount/commit/705b023d91da5af2ec44d247699e282102feb9a6))
+- Split MagicMount([aacf995](https://github.com/Tools-cx-app/meta-magic_mount/commit/aacf9957b05493706bf75500dc8f109efb07cca2))
+- Removed more space([34ebb0f](https://github.com/Tools-cx-app/meta-magic_mount/commit/34ebb0f4e99b8df90034c96de34d86fe8b9542b2))
 
 

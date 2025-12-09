@@ -1,12 +1,11 @@
 use std::fs;
-use std::os::unix::process::ExitStatusExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::ffi::CString;
 
 use anyhow::{Context, Result, bail};
 use rustix::fs::Mode;
-use rustix::mount::{mount, unmount, UnmountFlags, MountFlags};
+use rustix::mount::{unmount, UnmountFlags};
 use serde::Serialize;
 
 use crate::{defs, utils, mount::hymofs::HymoFs};
@@ -48,34 +47,15 @@ pub fn setup(mnt_base: &Path, img_path: &Path, force_ext4: bool) -> Result<Stora
 }
 
 fn try_setup_tmpfs(target: &Path) -> Result<bool> {
-    match mount(
-        unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(b"tmpfs\0") },
-        target,
-        unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(b"tmpfs\0") },
-        MountFlags::empty(),
-        unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(b"mode=0755\0") },
-    ) {
-        Ok(_) => {},
-        Err(_) => return Ok(false),
+    // 使用 utils 中的通用实现
+    if utils::mount_tmpfs(target).is_ok() {
+        if utils::is_xattr_supported(target) {
+            return Ok(true);
+        } else {
+            let _ = unmount(target, UnmountFlags::DETACH);
+        }
     }
-
-    if is_xattr_supported(target) {
-        Ok(true)
-    } else {
-        let _ = unmount(target, UnmountFlags::DETACH);
-        Ok(false)
-    }
-}
-
-fn is_xattr_supported(base: &Path) -> bool {
-    let test_file = base.join(".xattr_test");
-    if fs::write(&test_file, "test").is_err() {
-        return false;
-    }
-
-    let res = set_selinux_context(&test_file, DEFAULT_SELINUX_CONTEXT).is_ok();
-    let _ = fs::remove_file(test_file);
-    res
+    Ok(false)
 }
 
 fn setup_ext4_image(target: &Path, img_path: &Path) -> Result<StorageHandle> {
@@ -86,9 +66,11 @@ fn setup_ext4_image(target: &Path, img_path: &Path) -> Result<StorageHandle> {
         create_image(img_path).context("Failed to create modules.img")?;
     }
 
-    if let Err(_) = mount_image(img_path, target) {
-        if repair_image(img_path) {
-            mount_image(img_path, target).context("Failed to mount modules.img after repair")?;
+    // 使用 utils 中的通用实现
+    if let Err(_) = utils::mount_image(img_path, target) {
+        // utils::repair_image 返回 Result<()>, 需要转换为 bool 判断
+        if utils::repair_image(img_path).is_ok() {
+            utils::mount_image(img_path, target).context("Failed to mount modules.img after repair")?;
         } else {
             bail!("Failed to repair modules.img");
         }
@@ -100,40 +82,7 @@ fn setup_ext4_image(target: &Path, img_path: &Path) -> Result<StorageHandle> {
     })
 }
 
-fn mount_image(img_path: &Path, target: &Path) -> Result<()> {
-    fs::create_dir_all(target)?;
-
-    let status = Command::new("mount")
-        .arg("-o").arg("loop,rw,noatime")
-        .arg(img_path)
-        .arg(target)
-        .status()?;
-
-    if !status.success() {
-        bail!("Mount command failed");
-    }
-    Ok(())
-}
-
-fn repair_image(img_path: &Path) -> bool {
-    match Command::new("e2fsck")
-        .arg("-y")
-        .arg("-f")
-        .arg(img_path)
-        .status() 
-    {
-        Ok(status) => {
-            if let Some(code) = status.code() {
-                if code <= 2 {
-                    return true;
-                }
-            }
-        },
-        Err(e) => log::error!("Failed to execute e2fsck: {}", e),
-    }
-    false
-}
-
+// create_image 是 storage 特有的，保留在此
 fn create_image(path: &Path) -> Result<()> {
     let status = Command::new("truncate")
         .arg("-s").arg("2G")
@@ -150,6 +99,8 @@ fn create_image(path: &Path) -> Result<()> {
     Ok(())
 }
 
+// 这是一个目前未使用的辅助函数，标记 allow dead_code 以保留它但不报错
+#[allow(dead_code)]
 pub fn finalize_storage_permissions(target: &Path) {
     if let Err(e) = rustix::fs::chmod(target, Mode::from(0o755)) {
         log::warn!("Failed to chmod storage root: {}", e);

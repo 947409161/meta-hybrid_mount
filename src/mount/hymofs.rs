@@ -48,6 +48,7 @@ impl HymoFs {
         Self::send_cmd(&cmd)
     }
 
+    #[allow(dead_code)]
     pub fn delete_rule(src: &Path) -> Result<()> {
         Self::send_cmd(&format!("delete {}", src.display()))
     }

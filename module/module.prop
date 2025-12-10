@@ -1,8 +1,8 @@
 id=meta-hybrid
 metamodule=1
 name=Meta-Hybrid Mount
-version=v1.2.0-r1
-versionCode=59
+version=v1.2.0-r2
+versionCode=60
 author=YuzakiKokuban & Tools-cx-app
 updateJson=https://raw.githubusercontent.com/YuzakiKokuban/meta-hybrid_mount/master/update.json
 description=Waiting for daemon...

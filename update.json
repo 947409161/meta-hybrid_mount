@@ -1,6 +1,6 @@
 {
-  "version": "v1.2.0-r1",
-  "versionCode": 59,
-  "zipUrl": "https://github.com/YuzakiKokuban/meta-hybrid_mount/releases/download/v1.2.0-r1/Meta-Hybrid-v1.2.0-r1.zip",
+  "version": "v1.2.0-r2",
+  "versionCode": 60,
+  "zipUrl": "https://github.com/YuzakiKokuban/meta-hybrid_mount/releases/download/v1.2.0-r2/Meta-Hybrid-v1.2.0-r2.zip",
   "changelog": "https://raw.githubusercontent.com/YuzakiKokuban/meta-hybrid_mount/master/changelog.md"
 }

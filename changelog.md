@@ -1,7 +1,7 @@
-## v1.3.2
+## v1.4.0
 
-Changes since v1.3.1-r1:
-* fix(ui): ensure delete button visibility in path editor&update logo with three-orbit design
-* locales:解决雷人的翻译问题[skip ci]
-* chore(scripts): strip comments from source files
-* chore(release): bump version to v1.3.1-r1 [skip ci]
+Changes since v1.3.2:
+* webui: edit screen-title font-weight
+* feat: add ZygiskSU denylist_enforce detection and umount coexistence option
+* refactor: move temp path
+* chore(release): bump version to v1.3.2 [skip ci]

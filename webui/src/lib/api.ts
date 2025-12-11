@@ -153,7 +153,7 @@ const RealAPI = {
           console.error("Failed to parse daemon state JSON", e);
         }
       } else {
-          const mntPath = (PATHS as any).IMAGE_MNT || "/data/adb/meta-hybrid/img_mnt";
+          const mntPath = (PATHS as any).IMAGE_MNT || "/data/adb/meta-hybrid/mnt";
           const m = await ksuExec(`mount | grep "${mntPath}" | head -n 1`);
           if (m.errno === 0 && m.stdout) {
               const parts = m.stdout.split(' ');

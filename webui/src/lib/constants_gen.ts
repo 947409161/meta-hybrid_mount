@@ -3,7 +3,7 @@ export const APP_VERSION = "v0.0.0-mock";
 export const RUST_PATHS = {
   CONFIG: "/data/adb/meta-hybrid/config.toml",
   MODE_CONFIG: "/data/adb/meta-hybrid/module_mode.conf",
-  IMAGE_MNT: "/data/adb/meta-hybrid/img_mnt",
+  IMAGE_MNT: "/data/adb/meta-hybrid/mnt",
   DAEMON_STATE: "/data/adb/meta-hybrid/run/daemon_state.json",
   DAEMON_LOG: "/data/adb/meta-hybrid/daemon.log",
 } as const;

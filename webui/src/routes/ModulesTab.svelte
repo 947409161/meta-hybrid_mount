@@ -2,7 +2,7 @@
   import { store } from '../lib/store.svelte';
   import { ICONS } from '../lib/constants';
   import { onMount } from 'svelte';
-  import { fly } from 'svelte/transition';
+  import { fly, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import Skeleton from '../components/Skeleton.svelte';
   import BottomActions from '../components/BottomActions.svelte';

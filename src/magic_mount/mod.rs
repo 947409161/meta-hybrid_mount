@@ -3,6 +3,8 @@ mod node;
 mod try_umount;
 mod utils;
 
+#[cfg(any(target_os = "linux", target_os = "android"))]
+use std::cell::OnceCell;
 use std::{
     fs::{self, DirEntry, create_dir, read_dir, read_link},
     os::unix::fs::{MetadataExt, symlink},
@@ -27,6 +29,8 @@ use crate::{
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use crate::magic_mount::try_umount::send_unmountable;
+#[cfg(any(target_os = "linux", target_os = "android"))]
+static TEMP_DIR: OnceCell<PathBuf> = OnceCell::new();
 
 struct MagicMount {
     node: Node,
@@ -392,6 +396,9 @@ where
 
         mount(mount_source, &tmp_dir, "tmpfs", MountFlags::empty(), None).context("mount tmp")?;
         mount_change(&tmp_dir, MountPropagationFlags::PRIVATE).context("make tmp private")?;
+
+        #[cfg(any(target_os = "linux", target_os = "android"))]
+        TEMP_DIR.get_or_init(|| tmp_dir.clone());
 
         let result = {
             MagicMount::new(

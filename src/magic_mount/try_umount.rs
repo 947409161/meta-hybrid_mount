@@ -24,6 +24,14 @@ where
 {
     use rustix::path::Arg;
 
+    use crate::magic_mount::TEMP_DIR;
+
+    if let Some(p) = TEMP_DIR.get()
+        && p.starts_with("/debug__ramdisk")
+    {
+        return Ok(());
+    }
+
     let path = CString::new(target.as_ref().as_str()?)?;
     let cmd = KsuAddTryUmount {
         arg: path.as_ptr() as u64,

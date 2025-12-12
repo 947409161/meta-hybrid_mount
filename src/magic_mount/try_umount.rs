@@ -24,12 +24,14 @@ where
 {
     use rustix::path::Arg;
 
-    use crate::magic_mount::TEMP_DIR;
+    use crate::{defs::TMPFS_CANDIDATES, magic_mount::TEMP_DIR};
 
-    if let Some(p) = TEMP_DIR.get()
-        && p.starts_with("/debug__ramdisk")
-    {
-        return Ok(());
+    if let Some(p) = TEMP_DIR.get() {
+        for s in TMPFS_CANDIDATES {
+            if p.starts_with(*s) {
+                return Ok(());
+            }
+        }
     }
 
     let path = CString::new(target.as_ref().as_str()?)?;

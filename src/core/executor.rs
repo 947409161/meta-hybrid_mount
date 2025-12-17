@@ -107,6 +107,13 @@ pub fn execute(plan: &MountPlan, config: &config::Config) -> Result<ExecutionRes
             if let Err(e) = HymoFs::clear() {
                 log::warn!("Failed to reset HymoFS rules: {}", e);
             }
+            if let Err(e) = HymoFs::set_stealth(config.hymofs_stealth) {
+                log::warn!("Failed to set HymoFS stealth mode to {}: {}", config.hymofs_stealth, e);
+            }
+            if let Err(e) = HymoFs::set_debug(config.hymofs_debug) {
+                log::warn!("Failed to set HymoFS debug mode to {}: {}", config.hymofs_debug, e);
+            }
+
             if let Err(e) = utils::ensure_dir_exists(defs::HYMO_MIRROR_DIR) {
                 log::warn!("Failed to create hymo mirror dir: {}", e);
             }

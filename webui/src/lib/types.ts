@@ -9,6 +9,8 @@ export interface AppConfig {
   disable_umount: boolean;
   allow_umount_coexistence: boolean;
   dry_run: boolean;
+  hymofs_stealth: boolean;
+  hymofs_debug: boolean;
   logfile?: string;
 }
 

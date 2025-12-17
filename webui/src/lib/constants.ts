@@ -12,7 +12,9 @@ export const DEFAULT_CONFIG: AppConfig = {
   enable_nuke: false,
   disable_umount: false,
   allow_umount_coexistence: false,
-  dry_run: false
+  dry_run: false,
+  hymofs_stealth: true,
+  hymofs_debug: false
 };
 
 export const PATHS = {

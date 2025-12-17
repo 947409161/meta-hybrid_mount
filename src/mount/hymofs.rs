@@ -78,8 +78,6 @@ impl HymoFs {
         let file = Self::open_dev()?;
         unsafe { ioc_clear_all(file.as_raw_fd()) }
             .context("HymoFS clear failed")?;
-
-        // Enable debug mode by default
         let debug_val: i32 = 1;
         unsafe { ioc_set_debug(file.as_raw_fd(), &debug_val) }.ok();
         
@@ -255,6 +253,14 @@ impl HymoFs {
         let val: i32 = if enable { 1 } else { 0 };
         unsafe { ioc_set_debug(file.as_raw_fd(), &val) }
             .context("HymoFS set_debug failed")?;
+        Ok(())
+    }
+
+    pub fn set_stealth(enable: bool) -> Result<()> {
+        let file = Self::open_dev()?;
+        let val: i32 = if enable { 1 } else { 0 };
+        unsafe { ioc_set_stealth(file.as_raw_fd(), &val) }
+            .context("HymoFS set_stealth failed")?;
         Ok(())
     }
 }

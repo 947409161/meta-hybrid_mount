@@ -48,6 +48,8 @@
     "disableUmount": "禁用Umount",
     "allowUmountCoexistence": "允许Umount共存",
     "coexistenceRequired": "需开启共存选项",
+    "hymoStealth": "HymoFS 隐身模式",
+    "hymoDebug": "HymoFS 调试",
     "moduleDir": "模块路径",
     "tempDir": "临时路径",
     "mountSource": "挂载源名",

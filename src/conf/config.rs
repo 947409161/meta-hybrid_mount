@@ -25,6 +25,10 @@ pub struct Config {
     pub allow_umount_coexistence: bool,
     #[serde(default)]
     pub dry_run: bool,
+    #[serde(default)]
+    pub hymofs_stealth: bool,
+    #[serde(default)]
+    pub hymofs_debug: bool,
 }
 fn default_moduledir() -> PathBuf {
     PathBuf::from("/data/adb/modules/")
@@ -64,6 +68,8 @@ impl Default for Config {
             disable_umount: false,
             allow_umount_coexistence: false,
             dry_run: false,
+            hymofs_stealth: true,
+            hymofs_debug: false,
         }
     }
 }

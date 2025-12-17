@@ -48,6 +48,8 @@
     "disableUmount": "Disable Umount",
     "allowUmountCoexistence": "Allow Umount Coexistence",
     "coexistenceRequired": "Coexistence option required",
+    "hymoStealth": "Hymo Stealth",
+    "hymoDebug": "Hymo Debug",
     "moduleDir": "Module Directory",
     "tempDir": "Temp Directory",
     "mountSource": "Mount Source",

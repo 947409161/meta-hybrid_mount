@@ -207,6 +207,21 @@ fn main() -> Result<()> {
                         let json = serde_json::to_string(&silos)?;
                         println!("{}", json);
                     },
+                    // [Added] Support for manual creation
+                    "granary-create" => {
+                        let reason = value.as_deref().unwrap_or("Manual Backup");
+                        granary::create_silo(&config, "Manual Snapshot", reason)?;
+                        println!("Silo created.");
+                    },
+                    // [Added] Support for deletion
+                    "granary-delete" => {
+                        if let Some(id) = value {
+                            granary::delete_silo(id)?;
+                            println!("Silo {} deleted.", id);
+                        } else {
+                            anyhow::bail!("Missing Silo ID");
+                        }
+                    },
                     "granary-restore" => {
                         if let Some(id) = value {
                             granary::restore_silo(id)?;

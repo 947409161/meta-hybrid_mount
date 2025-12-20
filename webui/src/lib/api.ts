@@ -52,7 +52,7 @@ function stringToHex(str: string): string {
   return hex;
 }
 
-// Define the API interface explicitly to satisfy TypeScript
+// Define the API interface explicitly
 interface AppAPI {
   loadConfig: () => Promise<AppConfig>;
   saveConfig: (config: AppConfig) => Promise<void>;
@@ -243,29 +243,38 @@ const RealAPI: AppAPI = {
   getGranaryList: async (): Promise<Silo[]> => {
     if (!ksuExec) return [];
     try {
-        const { errno, stdout } = await ksuExec(`${PATHS.BINARY} hymo-action granary-list`);
+        // [FIX] Added --action flag
+        const { errno, stdout } = await ksuExec(`${PATHS.BINARY} hymo-action --action granary-list`);
         if (errno === 0 && stdout) return JSON.parse(stdout);
     } catch {}
     return [];
   },
   createSilo: async (reason: string): Promise<void> => {
     if (!ksuExec) return;
-    const { errno, stderr } = await ksuExec(`${PATHS.BINARY} hymo-action granary-create --value "${reason}"`);
+    // [FIX] Added --action flag and fixed formatting
+    const cmd = `${PATHS.BINARY} hymo-action --action granary-create --value "${reason}"`;
+    const { errno, stderr } = await ksuExec(cmd);
     if (errno !== 0) throw new Error(stderr);
   },
   deleteSilo: async (siloId: string): Promise<void> => {
     if (!ksuExec) return;
-    const { errno, stderr } = await ksuExec(`${PATHS.BINARY} hymo-action granary-delete --value "${siloId}"`);
+    // [FIX] Added --action flag
+    const cmd = `${PATHS.BINARY} hymo-action --action granary-delete --value "${siloId}"`;
+    const { errno, stderr } = await ksuExec(cmd);
     if (errno !== 0) throw new Error(stderr);
   },
   restoreSilo: async (siloId: string): Promise<void> => {
     if (!ksuExec) return;
-    const { errno, stderr } = await ksuExec(`${PATHS.BINARY} hymo-action granary-restore --value "${siloId}"`);
+    // [FIX] Added --action flag
+    const cmd = `${PATHS.BINARY} hymo-action --action granary-restore --value "${siloId}"`;
+    const { errno, stderr } = await ksuExec(cmd);
     if (errno !== 0) throw new Error(stderr);
   },
   setWinnowingRule: async (path: string, moduleId: string): Promise<void> => {
     if (!ksuExec) return;
-    const { errno, stderr } = await ksuExec(`${PATHS.BINARY} hymo-action winnow-set --value "${path}:${moduleId}"`);
+    // [FIX] Added --action flag
+    const cmd = `${PATHS.BINARY} hymo-action --action winnow-set --value "${path}:${moduleId}"`;
+    const { errno, stderr } = await ksuExec(cmd);
     if (errno !== 0) throw new Error(stderr);
   }
 };

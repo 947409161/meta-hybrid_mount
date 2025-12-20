@@ -127,7 +127,11 @@
   onMount(loadSilos);
 </script>
 
-<md-dialog open={showRestoreDialog} onclose={() => showRestoreDialog = false} style="--md-dialog-scrim-color: transparent;">
+<md-dialog 
+  open={showRestoreDialog} 
+  onclose={() => showRestoreDialog = false} 
+  style="--md-dialog-scrim-color: transparent; --md-sys-color-scrim: transparent;"
+>
   <div slot="headline">{L_G.dialogRestoreTitle || 'Restore?'}</div>
   <div slot="content">
     {(L_G.dialogRestoreContent || 'Restore {label}?').replace('{label}', selectedSilo?.label || '')}
@@ -144,7 +148,11 @@
   </div>
 </md-dialog>
 
-<md-dialog open={showDeleteDialog} onclose={() => showDeleteDialog = false} style="--md-dialog-scrim-color: transparent;">
+<md-dialog 
+  open={showDeleteDialog} 
+  onclose={() => showDeleteDialog = false} 
+  style="--md-dialog-scrim-color: transparent; --md-sys-color-scrim: transparent;"
+>
   <div slot="headline">{L_G.dialogDeleteTitle || 'Delete?'}</div>
   <div slot="content">
     {(L_G.dialogDeleteContent || 'Delete {label}?').replace('{label}', selectedSilo?.label || '')}
@@ -162,7 +170,11 @@
   </div>
 </md-dialog>
 
-<md-dialog open={showCreateDialog} onclose={() => !isCreating && (showCreateDialog = false)} style="--md-dialog-scrim-color: transparent;">
+<md-dialog 
+  open={showCreateDialog} 
+  onclose={() => !isCreating && (showCreateDialog = false)} 
+  style="--md-dialog-scrim-color: transparent; --md-sys-color-scrim: transparent;"
+>
     <div slot="headline">{L_G.dialogCreateTitle || 'New Backup'}</div>
     <div slot="content" class="create-content">
         <md-outlined-text-field

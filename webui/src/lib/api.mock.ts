@@ -4,6 +4,24 @@ import type { AppConfig, DeviceInfo, Module, StorageStatus, SystemInfo, ModuleRu
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+
+let mockSilos: Silo[] = [
+    { 
+        id: "silo_1715000000", 
+        timestamp: 1715000000, 
+        label: "Boot Backup", 
+        reason: "Automatic Pre-Mount",
+        config_snapshot: { ...DEFAULT_CONFIG }
+    },
+    { 
+        id: "silo_1715003600", 
+        timestamp: 1715003600, 
+        label: "Manual Save", 
+        reason: "User Action",
+        config_snapshot: { ...DEFAULT_CONFIG }
+    }
+];
+
 export const MockAPI = {
   async loadConfig(): Promise<AppConfig> {
     await delay(300);
@@ -129,29 +147,33 @@ export const MockAPI = {
           { level: "Warning", context: "magisk_module_1", message: "Dead absolute symlink: system/bin/test -> /dev/null" }
       ];
   },
+
   async getGranaryList(): Promise<Silo[]> {
     await delay(400);
-    return [
-        { 
-            id: "silo_1715000000", 
-            timestamp: 1715000000, 
-            label: "Boot Backup", 
-            reason: "Automatic Pre-Mount", 
-            config_snapshot: { ...DEFAULT_CONFIG } 
-        },
-        { 
-            id: "silo_1715003600", 
-            timestamp: 1715003600, 
-            label: "Manual Save", 
-            reason: "User Action", 
-            config_snapshot: { ...DEFAULT_CONFIG } 
-        }
-    ];
+    return JSON.parse(JSON.stringify(mockSilos));
+  },
+  async createSilo(reason: string): Promise<void> {
+    await delay(500);
+    const newSilo: Silo = {
+        id: `silo_${Math.floor(Date.now() / 1000)}`,
+        timestamp: Math.floor(Date.now() / 1000),
+        label: "Manual Snapshot",
+        reason: reason,
+        config_snapshot: { ...DEFAULT_CONFIG }
+    };
+    mockSilos.unshift(newSilo);
+    console.log('[Mock] Created silo:', newSilo);
+  },
+  async deleteSilo(siloId: string): Promise<void> {
+    await delay(500);
+    mockSilos = mockSilos.filter(s => s.id !== siloId);
+    console.log(`[Mock] Deleted silo: ${siloId}`);
   },
   async restoreSilo(siloId: string): Promise<void> {
     await delay(500);
     console.log(`[Mock] Restored silo: ${siloId}`);
   },
+
   async setWinnowingRule(path: string, moduleId: string): Promise<void> {
     await delay(300);
     console.log(`[Mock] Winnow rule set: ${path} -> ${moduleId}`);

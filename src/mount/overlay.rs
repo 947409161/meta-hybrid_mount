@@ -148,7 +148,6 @@ pub fn mount_overlay(
             Err(_) => continue,
         };
 
-        let path = entry.path();
         let file_name = entry.file_name();
         let name_str = file_name.to_string_lossy();
 
@@ -168,7 +167,6 @@ pub fn mount_overlay(
         }
 
         let relative_path = format!("/{}", name_str);
-        // Fix: Use &*name_str or .as_ref() to satisfy AsRef<Path>
         let target_path = Path::new(target).join(&*name_str);
         let stock_root_path = Path::new(".").join(&*name_str);
 
@@ -199,12 +197,14 @@ pub fn mount_overlay(
         let relative: String = mount_point.replacen(target, "", 1);
         let path_obj = Path::new(&relative);
 
-        if let Some(first_component) = path_obj.components().next() {
-            if let Some(first_str) = first_component.as_os_str().to_str() {
-                let clean_name = first_str.trim_start_matches('/');
-                if exclusions.contains(&clean_name) {
-                    continue;
-                }
+        if let Some(first_str) = path_obj
+            .components()
+            .next()
+            .and_then(|c| c.as_os_str().to_str())
+        {
+            let clean_name = first_str.trim_start_matches('/');
+            if exclusions.contains(&clean_name) {
+                continue;
             }
         }
 

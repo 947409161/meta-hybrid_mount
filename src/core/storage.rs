@@ -58,8 +58,6 @@ pub fn setup(
         let _ = unmount(mnt_base, UnmountFlags::DETACH);
     }
 
-    fs::create_dir_all(mnt_base)?;
-
     if !force_ext4 && try_setup_tmpfs(mnt_base, mount_source)? {
         return Ok(StorageHandle {
             mount_point: mnt_base.to_path_buf(),
@@ -171,10 +169,7 @@ pub fn print_status() -> Result<()> {
     let (mnt_base, expected_mode) = if let Some(ref s) = state {
         (s.mount_point.clone(), s.storage_mode.clone())
     } else {
-        (
-            PathBuf::from(defs::FALLBACK_CONTENT_DIR),
-            "unknown".to_string(),
-        )
+        (PathBuf::from(defs::HYBRID_MNT_DIR), "unknown".to_string())
     };
 
     let mut mode = "unknown".to_string();

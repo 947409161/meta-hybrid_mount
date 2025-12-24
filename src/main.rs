@@ -194,7 +194,7 @@ fn main() -> Result<()> {
     utils::ensure_dir_exists(defs::RUN_DIR)
         .with_context(|| format!("Failed to create run directory: {}", defs::RUN_DIR))?;
 
-    let mnt_base = PathBuf::from(defs::FALLBACK_CONTENT_DIR);
+    let mnt_base = PathBuf::from(defs::HYBRID_MNT_DIR);
     let img_path = Path::new(defs::BASE_DIR).join("modules.img");
 
     if let Err(e) = granary::create_silo(&config, "Boot Backup", "Automatic Pre-Mount") {

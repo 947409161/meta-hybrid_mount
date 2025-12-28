@@ -1,3 +1,6 @@
+// Copyright 2025 Meta-Hybrid Mount Authors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use std::ffi::CString;
 use std::fmt as std_fmt;
 use std::fs::{self, File, create_dir_all, remove_dir_all, remove_file, write};
@@ -29,6 +32,7 @@ use extattr::{Flags as XattrFlags, lgetxattr, llistxattr, lsetxattr};
 
 const SELINUX_XATTR: &str = "security.selinux";
 const OVERLAY_OPAQUE_XATTR: &str = "trusted.overlay.opaque";
+const DEFAULT_CONTEXT: &str = "u:object_r:system_file:s0";
 const OVERLAY_TEST_XATTR: &str = "trusted.overlay.test";
 
 #[allow(dead_code)]
@@ -131,14 +135,17 @@ pub fn check_zygisksu_enforce_status() -> bool {
 fn copy_extended_attributes(src: &Path, dst: &Path) -> Result<()> {
     #[cfg(any(target_os = "linux", target_os = "android"))]
     {
-        if let Ok(ctx) = lgetfilecon(src) {
+        if let Ok(mut ctx) = lgetfilecon(src) {
+            if ctx.contains("u:object_r:rootfs:s0") {
+                ctx = DEFAULT_CONTEXT.to_string();
+            }
             let _ = lsetfilecon(dst, &ctx);
+        } else {
+            let _ = lsetfilecon(dst, DEFAULT_CONTEXT);
         }
-
         if let Ok(opaque) = lgetxattr(src, OVERLAY_OPAQUE_XATTR) {
             let _ = lsetxattr(dst, OVERLAY_OPAQUE_XATTR, &opaque, XattrFlags::empty());
         }
-
         if let Ok(xattrs) = llistxattr(src) {
             for xattr_name in xattrs {
                 let name_bytes = xattr_name.as_bytes();
@@ -192,7 +199,16 @@ pub fn lgetfilecon<P: AsRef<Path>>(path: P) -> Result<String> {
 
 #[cfg(not(any(target_os = "linux", target_os = "android")))]
 pub fn lgetfilecon<P: AsRef<Path>>(_path: P) -> Result<String> {
-    Ok("u:object_r:system_file:s0".to_string())
+    Ok(DEFAULT_CONTEXT.to_string())
+}
+
+pub fn copy_path_context<S: AsRef<Path>, D: AsRef<Path>>(src: S, dst: D) -> Result<()> {
+    let context = if src.as_ref().exists() {
+        lgetfilecon(&src).unwrap_or_else(|_| DEFAULT_CONTEXT.to_string())
+    } else {
+        DEFAULT_CONTEXT.to_string()
+    };
+    lsetfilecon(dst, &context)
 }
 
 pub fn ensure_dir_exists<T: AsRef<Path>>(dir: T) -> Result<()> {
@@ -308,6 +324,7 @@ pub fn mount_tmpfs(target: &Path, source: &str) -> Result<()> {
 
 pub fn mount_image(image_path: &Path, target: &Path) -> Result<()> {
     ensure_dir_exists(target)?;
+    lsetfilecon(image_path, "u:object_r:ksu_file:s0").ok();
     let status = Command::new("mount")
         .args(["-t", "ext4", "-o", "loop,rw,noatime"])
         .arg(image_path)
@@ -364,7 +381,30 @@ fn make_device_node(path: &Path, mode: u32, rdev: u64) -> Result<()> {
     Ok(())
 }
 
-fn native_cp_r(src: &Path, dst: &Path) -> Result<()> {
+fn apply_system_context(current: &Path, relative: &Path) -> Result<()> {
+    if let Some(name) = current.file_name().and_then(|n| n.to_str())
+        && (name == "upperdir" || name == "workdir")
+        && let Some(parent) = current.parent()
+        && let Ok(ctx) = lgetfilecon(parent)
+    {
+        return lsetfilecon(current, &ctx);
+    }
+
+    let system_path = Path::new("/").join(relative);
+
+    if system_path.exists() {
+        copy_path_context(&system_path, current)?;
+    } else if let Some(parent) = system_path.parent()
+        && parent.exists()
+    {
+        copy_path_context(parent, current)?;
+    } else {
+        lsetfilecon(current, DEFAULT_CONTEXT)?;
+    }
+    Ok(())
+}
+
+fn native_cp_r(src: &Path, dst: &Path, relative: &Path, repair: bool) -> Result<()> {
     if !dst.exists() {
         if src.is_dir() {
             create_dir_all(dst)?;
@@ -373,7 +413,11 @@ fn native_cp_r(src: &Path, dst: &Path) -> Result<()> {
             let _ = fs::set_permissions(dst, src_meta.permissions());
         }
 
-        let _ = copy_extended_attributes(src, dst);
+        if repair && relative.as_os_str().is_empty() {
+            let _ = apply_system_context(dst, relative);
+        } else if !repair {
+            let _ = copy_extended_attributes(src, dst);
+        }
     }
 
     for entry in fs::read_dir(src)? {
@@ -381,12 +425,13 @@ fn native_cp_r(src: &Path, dst: &Path) -> Result<()> {
         let src_path = entry.path();
         let file_name = entry.file_name();
         let dst_path = dst.join(&file_name);
+        let next_relative = relative.join(&file_name);
 
         let metadata = entry.metadata()?;
         let ft = metadata.file_type();
 
         if ft.is_dir() {
-            native_cp_r(&src_path, &dst_path)?;
+            native_cp_r(&src_path, &dst_path, &next_relative, repair)?;
         } else if ft.is_symlink() {
             if dst_path.exists() {
                 remove_file(&dst_path)?;
@@ -404,17 +449,21 @@ fn native_cp_r(src: &Path, dst: &Path) -> Result<()> {
             reflink_or_copy(&src_path, &dst_path)?;
         }
 
-        let _ = copy_extended_attributes(&src_path, &dst_path);
+        if repair {
+            let _ = apply_system_context(&dst_path, &next_relative);
+        } else {
+            let _ = copy_extended_attributes(&src_path, &dst_path);
+        }
     }
     Ok(())
 }
 
-pub fn sync_dir(src: &Path, dst: &Path) -> Result<()> {
+pub fn sync_dir(src: &Path, dst: &Path, repair_context: bool) -> Result<()> {
     if !src.exists() {
         return Ok(());
     }
     ensure_dir_exists(dst)?;
-    native_cp_r(src, dst).with_context(|| {
+    native_cp_r(src, dst, Path::new(""), repair_context).with_context(|| {
         format!(
             "Failed to natively sync {} to {}",
             src.display(),
@@ -510,11 +559,13 @@ pub fn create_erofs_image(src_dir: &Path, image_path: &Path) -> Result<()> {
 
     log::info!("Build Completed.");
     let _ = fs::set_permissions(image_path, fs::Permissions::from_mode(0o644));
+    lsetfilecon(image_path, "u:object_r:ksu_file:s0")?;
     Ok(())
 }
 
 pub fn mount_erofs_image(image_path: &Path, target: &Path) -> Result<()> {
     ensure_dir_exists(target)?;
+    lsetfilecon(image_path, "u:object_r:ksu_file:s0").ok();
     let status = Command::new("mount")
         .args(["-t", "erofs", "-o", "loop,ro,nodev,noatime"])
         .arg(image_path)

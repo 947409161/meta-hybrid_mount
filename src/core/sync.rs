@@ -40,7 +40,7 @@ pub fn perform_sync(modules: &[Module], target_base: &Path) -> Result<()> {
                 log::warn!("Failed to clean target dir for {}: {}", module.id, e);
             }
 
-            if let Err(e) = utils::sync_dir(&module.source_path, &dst) {
+            if let Err(e) = utils::sync_dir(&module.source_path, &dst, true) {
                 log::error!("Failed to sync module {}: {}", module.id, e);
             }
         } else {

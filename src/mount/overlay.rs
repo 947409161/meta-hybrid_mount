@@ -3,6 +3,7 @@
 
 use std::{
     ffi::CString,
+    fs::File,
     path::{Path, PathBuf},
 };
 
@@ -21,7 +22,7 @@ pub fn mount_overlayfs(
     upperdir: Option<PathBuf>,
     workdir: Option<PathBuf>,
     dest: impl AsRef<Path>,
-    #[cfg(any(target_os = "linux", target_os = "android"))] disable_umount: bool,
+    #[cfg(any(target_os = "linux", target_os = "android"))] _disable_umount: bool,
 ) -> Result<()> {
     let lowerdir_config = lower_dirs
         .iter()
@@ -37,6 +38,13 @@ pub fn mount_overlayfs(
         workdir
     );
 
+    if lowerdir_config.len() > 4096 {
+        warn!(
+            "OverlayFS lowerdir string is very long ({} chars). This might exceed kernel limits and fail.",
+            lowerdir_config.len()
+        );
+    }
+
     let upperdir_s = upperdir
         .filter(|up| up.exists())
         .map(|e| e.display().to_string());
@@ -44,7 +52,6 @@ pub fn mount_overlayfs(
         .filter(|wd| wd.exists())
         .map(|e| e.display().to_string());
 
-    // Try New API (fsopen)
     let result = (|| {
         let fs = fsopen("overlay", FsOpenFlags::FSOPEN_CLOEXEC)?;
         let fs = fs.as_fd();
@@ -65,7 +72,6 @@ pub fn mount_overlayfs(
         )
     })();
 
-    // Fallback to Old API (mount)
     if let Err(e) = result {
         warn!("fsopen mount failed: {e:#}, fallback to mount");
         let mut data = format!("lowerdir={lowerdir_config}");
@@ -82,15 +88,11 @@ pub fn mount_overlayfs(
         )?;
     }
 
-    #[cfg(any(target_os = "linux", target_os = "android"))]
-    if !disable_umount {
-        let _ = send_unmountable(dest.as_ref());
-    }
-
     Ok(())
 }
 
-pub fn bind_mount(
+fn bind_mount_at(
+    dfd: impl AsFd,
     from: impl AsRef<Path>,
     to: impl AsRef<Path>,
     #[cfg(any(target_os = "linux", target_os = "android"))] disable_umount: bool,
@@ -101,7 +103,7 @@ pub fn bind_mount(
         to.as_ref().display()
     );
     let tree = open_tree(
-        CWD,
+        dfd,
         from.as_ref(),
         OpenTreeFlags::OPEN_TREE_CLOEXEC
             | OpenTreeFlags::OPEN_TREE_CLONE
@@ -132,16 +134,13 @@ pub fn mount_overlay(
 ) -> Result<()> {
     info!("mount overlay for {root}");
 
-    // Safety check: ensure root exists before chdir
     if !Path::new(root).exists() {
         warn!("Target root {} does not exist, skipping.", root);
         return Ok(());
     }
 
-    std::env::set_current_dir(root).with_context(|| format!("failed to chdir to {root}"))?;
-    let stock_root = ".";
+    let root_fd = File::open(root).with_context(|| format!("failed to open root {root}"))?;
 
-    // collect child mounts before mounting the root
     let mounts = Process::myself()?
         .mountinfo()
         .with_context(|| "get mountinfo")?;
@@ -172,16 +171,15 @@ pub fn mount_overlay(
         let Some(mount_point) = mount_point else {
             continue;
         };
-        let relative = mount_point.replacen(root, "", 1);
-        let stock_root_child: String = format!("{stock_root}{relative}");
-        if !Path::new(&stock_root_child).exists() {
-            continue;
-        }
+
+        let mp_path = Path::new(mount_point);
+        let relative_path = mp_path.strip_prefix(root).unwrap_or(mp_path);
 
         // Use bind mount to restore visibility of child mounts
-        if let Err(e) = bind_mount(
-            &stock_root_child,
-            mount_point,
+        if let Err(e) = bind_mount_at(
+            &root_fd,
+            relative_path,
+            mp_path,
             #[cfg(any(target_os = "linux", target_os = "android"))]
             disable_umount,
         ) {

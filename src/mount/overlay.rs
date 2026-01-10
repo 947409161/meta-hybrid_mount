@@ -24,16 +24,10 @@ pub fn mount_overlayfs(
     dest: impl AsRef<Path>,
     #[cfg(any(target_os = "linux", target_os = "android"))] _disable_umount: bool,
 ) -> Result<()> {
-    let escape_path = |s: &str| -> String {
-        s.replace('\\', "\\\\")
-            .replace(':', "\\:")
-            .replace(',', "\\,")
-    };
-
     let lowerdir_config = lower_dirs
         .iter()
-        .map(|s| escape_path(s))
-        .chain(std::iter::once(escape_path(lowest)))
+        .map(|s| s.as_ref())
+        .chain(std::iter::once(lowest))
         .collect::<Vec<_>>()
         .join(":");
     info!(
@@ -53,10 +47,10 @@ pub fn mount_overlayfs(
 
     let upperdir_s = upperdir
         .filter(|up| up.exists())
-        .map(|e| escape_path(&e.display().to_string()));
+        .map(|e| e.display().to_string());
     let workdir_s = workdir
         .filter(|wd| wd.exists())
-        .map(|e| escape_path(&e.display().to_string()));
+        .map(|e| e.display().to_string());
 
     // Try New API (fsopen)
     let result = (|| {

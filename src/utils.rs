@@ -127,55 +127,26 @@ pub fn init_logging(verbose: bool, log_path: &Path) -> Result<WorkerGuard> {
     Ok(guard)
 }
 
-fn get_random_string() -> String {
-    use std::io::Read;
-    let mut buf = [0u8; 6];
-    if let Ok(mut file) = File::open("/dev/urandom") {
-        let _ = file.read_exact(&mut buf);
-    } else {
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_nanos();
-        buf.copy_from_slice(&now.to_le_bytes()[0..6]);
-    }
-    buf.iter().map(|b| format!("{:02x}", b)).collect()
-}
-
 pub fn atomic_write<P: AsRef<Path>, C: AsRef<[u8]>>(path: P, content: C) -> Result<()> {
     let path = path.as_ref();
     let dir = path.parent().unwrap_or_else(|| Path::new("."));
 
-    for _ in 0..3 {
-        let suffix = get_random_string();
-        let target_name = path
-            .file_name()
-            .map(|s| s.to_string_lossy())
-            .unwrap_or_else(|| "unnamed".into());
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let pid = std::process::id();
+    let temp_name = format!(".{}_{}.tmp", pid, now);
+    let temp_file = dir.join(temp_name);
 
-        let temp_name = format!(".{}.{}.tmp", target_name, suffix);
-        let temp_file = dir.join(temp_name);
-
-        match std::fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&temp_file)
-        {
-            Ok(mut file) => {
-                file.write_all(content.as_ref())?;
-                file.sync_all()?;
-                drop(file);
-                fs::rename(&temp_file, path)?;
-                return Ok(());
-            }
-            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
-                continue;
-            }
-            Err(e) => return Err(e.into()),
-        }
+    {
+        let mut file = File::create(&temp_file)?;
+        file.write_all(content.as_ref())?;
+        file.sync_all()?;
     }
 
-    bail!("Failed to create temporary file for atomic write after retries");
+    fs::rename(&temp_file, path)?;
+    Ok(())
 }
 
 pub fn validate_module_id(module_id: &str) -> Result<()> {
@@ -427,7 +398,13 @@ pub fn mount_tmpfs(target: &Path, source: &str) -> Result<()> {
 }
 
 fn find_system_binary(name: &str) -> String {
-    let paths = ["/system/bin", "/sbin", "/usr/bin", "/bin", "/vendor/bin"];
+    let paths = [
+        "/system/bin",
+        "/sbin",
+        "/usr/bin",
+        "/bin",
+        "/vendor/bin",
+    ];
 
     for dir in paths {
         let p = Path::new(dir).join(name);
@@ -442,8 +419,7 @@ pub fn mount_image(image_path: &Path, target: &Path) -> Result<()> {
     ensure_dir_exists(target)?;
     lsetfilecon(image_path, "u:object_r:ksu_file:s0").ok();
 
-    let mount_bin = find_system_binary("mount");
-    let status = Command::new(mount_bin)
+    let status = Command::new("mount")
         .args(["-t", "ext4", "-o", "loop,rw,noatime"])
         .arg(image_path)
         .arg(target)
@@ -458,8 +434,7 @@ pub fn mount_image(image_path: &Path, target: &Path) -> Result<()> {
 
 pub fn repair_image(image_path: &Path) -> Result<()> {
     log::info!("Running e2fsck on {}", image_path.display());
-    let e2fsck_bin = find_system_binary("e2fsck");
-    let status = Command::new(e2fsck_bin)
+    let status = Command::new("e2fsck")
         .args(["-y", "-f"])
         .arg(image_path)
         .status()
@@ -694,8 +669,7 @@ pub fn create_erofs_image(src_dir: &Path, image_path: &Path) -> Result<()> {
 pub fn mount_erofs_image(image_path: &Path, target: &Path) -> Result<()> {
     ensure_dir_exists(target)?;
     lsetfilecon(image_path, "u:object_r:ksu_file:s0").ok();
-    let mount_bin = find_system_binary("mount");
-    let status = Command::new(mount_bin)
+    let status = Command::new("mount")
         .args(["-t", "erofs", "-o", "loop,ro,nodev,noatime"])
         .arg(image_path)
         .arg(target)

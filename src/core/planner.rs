@@ -1,3 +1,6 @@
+// Copyright 2025 Meta-Hybrid Mount Authors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use std::{
     collections::{HashMap, HashSet},
     fs,
@@ -169,7 +172,11 @@ pub fn generate(
     let contributions: Vec<Option<ModuleContribution>> = modules
         .par_iter()
         .map(|module| {
-            let content_path = storage_root.join(&module.id);
+            let mut content_path = storage_root.join(&module.id);
+
+            if !content_path.exists() {
+                content_path = module.source_path.clone();
+            }
 
             if !content_path.exists() {
                 return None;

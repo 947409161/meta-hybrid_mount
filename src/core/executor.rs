@@ -9,10 +9,8 @@ use walkdir::WalkDir;
 
 use crate::{
     conf::config,
-    core::{
-        planner::MountPlan,
-        storage::{OverlayLayout, StorageHandle},
-    },
+    core::planner::MountPlan,
+    defs,
     mount::{magic_mount, overlayfs},
     utils,
 };
@@ -99,11 +97,7 @@ pub fn diagnose_plan(plan: &MountPlan) -> Vec<DiagnosticIssue> {
     issues
 }
 
-pub fn execute(
-    plan: &MountPlan,
-    config: &config::Config,
-    storage: &StorageHandle,
-) -> Result<ExecutionResult> {
+pub fn execute(plan: &MountPlan, config: &config::Config) -> Result<ExecutionResult> {
     let mut magic_queue = plan.magic_module_paths.clone();
 
     let mut global_success_map: HashMap<PathBuf, HashSet<String>> = HashMap::new();
@@ -126,32 +120,18 @@ pub fn execute(
                 .map(|p: &PathBuf| p.display().to_string())
                 .collect();
 
-            let (upper_opt, work_opt) = match &storage.layout {
-                OverlayLayout::Contained => {
-                    let rw_root = storage.mount_point.join("overlay_rw");
-                    let part_rw = rw_root.join(&op.partition_name);
-                    let upper = part_rw.join("upperdir");
-                    let work = part_rw.join("workdir");
+            let rw_root = Path::new(defs::SYSTEM_RW_DIR);
 
-                    if std::fs::create_dir_all(&work).is_ok()
-                        && std::fs::create_dir_all(&upper).is_ok()
-                    {
-                        (Some(upper), Some(work))
-                    } else {
-                        tracing::warn!("Failed to create overlay directories in contained storage");
-                        (None, None)
-                    }
-                }
-                OverlayLayout::Split { rw_base } | OverlayLayout::Direct { rw_base } => {
-                    let part_rw = rw_base.join(&op.partition_name);
-                    let upper = part_rw.join("upperdir");
-                    let work = part_rw.join("workdir");
-                    if upper.exists() && work.exists() {
-                        (Some(upper), Some(work))
-                    } else {
-                        (None, None)
-                    }
-                }
+            let part_rw = rw_root.join(&op.partition_name);
+
+            let upper = part_rw.join("upperdir");
+
+            let work = part_rw.join("workdir");
+
+            let (upper_opt, work_opt) = if upper.exists() && work.exists() {
+                (Some(upper), Some(work))
+            } else {
+                (None, None)
             };
 
             tracing::info!(

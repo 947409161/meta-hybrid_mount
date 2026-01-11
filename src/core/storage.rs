@@ -14,27 +14,19 @@ use serde::Serialize;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use crate::try_umount::send_unmountable;
-use crate::{core::state::RuntimeState, defs, mount::overlayfs::utils as overlay_utils, utils};
+use crate::{
+    core::state::RuntimeState,
+    defs,
+    mount::overlayfs::{overlayfs, utils as overlay_utils},
+    utils,
+};
 
 const DEFAULT_SELINUX_CONTEXT: &str = "u:object_r:system_file:s0";
-
-#[derive(Debug, Clone)]
-pub enum OverlayLayout {
-    Contained,
-    Split {
-        rw_base: PathBuf,
-    },
-    #[allow(dead_code)]
-    Direct {
-        rw_base: PathBuf,
-    },
-}
 
 pub struct StorageHandle {
     pub mount_point: PathBuf,
     pub mode: String,
     pub backing_image: Option<PathBuf>,
-    pub layout: OverlayLayout,
 }
 
 impl StorageHandle {
@@ -60,10 +52,6 @@ impl StorageHandle {
             }
 
             self.mode = "erofs".to_string();
-
-            self.layout = OverlayLayout::Split {
-                rw_base: PathBuf::from(defs::SYSTEM_RW_DIR),
-            };
         }
 
         Ok(())
@@ -167,7 +155,6 @@ pub fn setup(
             mount_point: mnt_base.to_path_buf(),
             mode: "erofs_staging".to_string(),
             backing_image: Some(erofs_path),
-            layout: OverlayLayout::Contained,
         });
     }
 
@@ -184,7 +171,6 @@ pub fn setup(
             mount_point: mnt_base.to_path_buf(),
             mode: "tmpfs".to_string(),
             backing_image: None,
-            layout: OverlayLayout::Contained,
         });
     }
 
@@ -279,7 +265,6 @@ fn setup_ext4_image(target: &Path, img_path: &Path, moduledir: &Path) -> Result<
         mount_point: target.to_path_buf(),
         mode: "ext4".to_string(),
         backing_image: Some(img_path.to_path_buf()),
-        layout: OverlayLayout::Contained,
     })
 }
 

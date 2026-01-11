@@ -1,3 +1,6 @@
+// Copyright 2025 Meta-Hybrid Mount Authors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use std::{collections::HashSet, fs, path::Path};
 
 use anyhow::Result;
@@ -11,14 +14,6 @@ use crate::{
 
 pub fn perform_sync(modules: &[Module], target_base: &Path) -> Result<()> {
     tracing::info!("Starting smart module sync to {}", target_base.display());
-
-    if !crate::utils::is_mounted(target_base) {
-        tracing::debug!(
-            "Storage {} is not mounted, skipping sync.",
-            target_base.display()
-        );
-        return Ok(());
-    }
 
     prune_orphaned_modules(modules, target_base)?;
 
@@ -49,6 +44,7 @@ pub fn perform_sync(modules: &[Module], target_base: &Path) -> Result<()> {
             if let Err(e) = utils::sync_dir(&module.source_path, &dst, true) {
                 tracing::error!("Failed to sync module {}: {}", module.id, e);
             } else {
+                // Apply trusted.overlay.opaque xattrs if .replace files exist
                 if let Err(e) = apply_overlay_opaque_flags(&dst) {
                     tracing::warn!(
                         "Failed to apply overlay opaque xattrs for {}: {}",
@@ -94,11 +90,7 @@ fn prune_orphaned_modules(modules: &[Module], target_base: &Path) -> Result<()> 
 
         let name = name_os.to_string_lossy();
 
-        if name != "lost+found"
-            && name != "meta-hybrid"
-            && name != "overlay_rw"
-            && !active_ids.contains(name.as_ref())
-        {
+        if name != "lost+found" && name != "meta-hybrid" && !active_ids.contains(name.as_ref()) {
             tracing::info!("Pruning orphaned module storage: {}", name);
 
             if path.is_dir() {

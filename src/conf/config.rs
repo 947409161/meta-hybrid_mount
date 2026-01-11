@@ -11,7 +11,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 pub const CONFIG_FILE_DEFAULT: &str = "/data/adb/meta-hybrid/config.toml";
-use crate::defs::{DEFAULT_HYBRID_MNT_DIR, DEFAULT_MOUNT_SOURCE};
+use crate::defs::DEFAULT_HYBRID_MNT_DIR;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct WinnowingTable {

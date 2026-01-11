@@ -1,8 +1,8 @@
 use std::{
     ffi::CString,
     fmt as std_fmt,
-    fs::{self, File, create_dir_all, remove_dir_all, remove_file, write},
-    io::Write,
+    fs::{File, create_dir_all, remove_dir_all, remove_file, write},
+    io::{ErrorKind, Write},
     os::unix::{
         ffi::OsStrExt,
         fs::{FileTypeExt, MetadataExt, PermissionsExt, symlink},
@@ -13,7 +13,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Error, Result, bail};
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use extattr::{Flags as XattrFlags, lgetxattr, llistxattr, lsetxattr};
 use procfs::process::Process;
@@ -461,23 +461,6 @@ pub fn mount_tmpfs(target: &Path, source: &str) -> Result<()> {
         Some(data.as_c_str()),
     )
     .context("Failed to mount tmpfs")?;
-    Ok(())
-}
-
-pub fn mount_image(image_path: &Path, target: &Path) -> Result<()> {
-    ensure_dir_exists(target)?;
-    lsetfilecon(image_path, "u:object_r:ksu_file:s0").ok();
-
-    let status = Command::new("mount")
-        .args(["-t", "ext4", "-o", "loop,rw,noatime"])
-        .arg(image_path)
-        .arg(target)
-        .status()
-        .context("Failed to execute mount command")?;
-
-    if !status.success() {
-        bail!("Mount command failed");
-    }
     Ok(())
 }
 

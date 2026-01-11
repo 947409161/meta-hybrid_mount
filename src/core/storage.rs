@@ -14,12 +14,7 @@ use serde::Serialize;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use crate::try_umount::send_unmountable;
-use crate::{
-    core::state::RuntimeState,
-    defs,
-    mount::overlayfs::{self, utils as overlay_utils},
-    utils,
-};
+use crate::{core::state::RuntimeState, defs, mount::overlayfs::utils as overlay_utils, utils};
 
 const DEFAULT_SELINUX_CONTEXT: &str = "u:object_r:system_file:s0";
 

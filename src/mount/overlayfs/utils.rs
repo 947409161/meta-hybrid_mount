@@ -1,7 +1,7 @@
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use std::fs;
 #[cfg(any(target_os = "linux", target_os = "android"))]
-use std::{os::fd::AsFd, os::unix::fs::PermissionsExt, path::Path, process::Command};
+use std::{os::unix::fs::PermissionsExt, path::Path, process::Command};
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use anyhow::{Context, Result, anyhow};

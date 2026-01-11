@@ -43,7 +43,7 @@ pub fn mount_systemlessly(module_id: HashSet<String>, extra_partitions: &[String
                 tracing::info!("module: {} is disabled, ignore!", module.display());
                 continue;
             }
-            if !module_id.contains(&module_name.as_str()?.to_string()) {
+            if !module_id.contains(&module_name.to_string_lossy().to_string()) {
                 continue;
             }
         }

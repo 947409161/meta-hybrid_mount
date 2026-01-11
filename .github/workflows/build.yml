@@ -23,12 +23,6 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Setup Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 

@@ -50,14 +50,14 @@ pub fn perform_sync(modules: &[Module], target_base: &Path) -> Result<()> {
                 );
             }
 
-            if dst.exists() {
-                if let Err(e) = fs::remove_dir_all(&dst) {
-                    tracing::warn!(
-                        "Failed to clean existing target dir for {}: {}",
-                        module.id,
-                        e
-                    );
-                }
+            if dst.exists()
+                && let Err(e) = fs::remove_dir_all(&dst)
+            {
+                tracing::warn!(
+                    "Failed to clean existing target dir for {}: {}",
+                    module.id,
+                    e
+                );
             }
 
             if let Err(e) = fs::rename(&tmp_dst, &dst) {

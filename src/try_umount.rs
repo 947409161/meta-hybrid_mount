@@ -43,26 +43,15 @@ pub fn commit() -> Result<()> {
         .lock()
         .map_err(|_| anyhow::anyhow!("Failed to lock unmount list"))?;
 
+    // Attempt 1: Normal unmount (0)
     list.flags(0);
     if let Err(e0) = list.umount() {
         tracing::debug!("try_umount(0) failed: {:#}, retrying with flags(2)", e0);
 
+        // Attempt 2: Detach/Lazy unmount (2)
         list.flags(2);
         if let Err(e2) = list.umount() {
-            let is_eperm = e2
-                .root_cause()
-                .downcast_ref::<std::io::Error>()
-                .and_then(|io_err| io_err.raw_os_error())
-                .map(|code| code == 1)
-                .unwrap_or(false);
-
-            if is_eperm {
-                tracing::debug!(
-                    "try_umount(2) suppressed: Mount point is locked by environment (EPERM)."
-                );
-            } else {
-                tracing::warn!("try_umount(2) failed: {:#}", e2);
-            }
+            tracing::warn!("try_umount(2) failed: {:#}", e2);
         }
     }
 

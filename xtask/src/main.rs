@@ -14,7 +14,7 @@ use fs_extra::{
     file::{self},
 };
 use tempfile::NamedTempFile;
-use zip::{write::FileOptions, CompressionMethod};
+use zip::{CompressionMethod, write::FileOptions};
 
 mod zip_ext;
 use crate::zip_ext::zip_create_from_directory_with_options;
@@ -194,16 +194,16 @@ fn build_full(
         .compression_level(Some(9));
     zip_create_from_directory_with_options(&zip_file, &stage_dir, |_| zip_options)?;
     println!(":: Build Complete: {}", zip_file.display());
-    if let Ok(password) = env::var("META_HYBRID_SIGN_PASSWORD") {
-        if !password.is_empty() {
-            let abs_key_enc = root.join(key_enc_path);
-            let abs_cert = root.join(cert_path);
+    if let Ok(password) = env::var("META_HYBRID_SIGN_PASSWORD")
+        && !password.is_empty()
+    {
+        let abs_key_enc = root.join(key_enc_path);
+        let abs_cert = root.join(cert_path);
 
-            if abs_key_enc.exists() && abs_cert.exists() {
-                decrypt_and_sign(&zip_file, &abs_key_enc, &abs_cert, &password)?;
-            } else {
-                println!(":: Skipping signature: private.enc or cert.pem not found at root.");
-            }
+        if abs_key_enc.exists() && abs_cert.exists() {
+            decrypt_and_sign(&zip_file, &abs_key_enc, &abs_cert, &password)?;
+        } else {
+            println!(":: Skipping signature: private.enc or cert.pem not found at root.");
         }
     } else {
         println!(":: Skipping signature: META_HYBRID_SIGN_PASSWORD not set.");
@@ -360,27 +360,27 @@ fn compile_core(root: &Path, release: bool, arch: Arch) -> Result<()> {
 }
 
 fn get_version(root: &Path) -> Result<String> {
-    if let Ok(v) = env::var("META_HYBRID_VERSION") {
-        if !v.is_empty() {
-            return Ok(v);
-        }
+    if let Ok(v) = env::var("META_HYBRID_VERSION")
+        && !v.is_empty()
+    {
+        return Ok(v);
     }
     let output = Command::new("git")
         .args(["describe", "--tags", "--always", "--dirty"])
         .output();
-    if let Ok(o) = output {
-        if o.status.success() {
-            return Ok(String::from_utf8(o.stdout)?.trim().to_string());
-        }
+    if let Ok(o) = output
+        && o.status.success()
+    {
+        return Ok(String::from_utf8(o.stdout)?.trim().to_string());
     }
     let toml_path = root.join("module/config.toml");
     if toml_path.exists() {
         let content = fs::read_to_string(toml_path)?;
         for line in content.lines() {
-            if line.trim().starts_with("version") {
-                if let Some(v) = line.split('"').nth(1) {
-                    return Ok(format!("{}-dev", v));
-                }
+            if line.trim().starts_with("version")
+                && let Some(v) = line.split('"').nth(1)
+            {
+                return Ok(format!("{}-dev", v));
             }
         }
     }

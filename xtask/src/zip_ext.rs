@@ -7,7 +7,7 @@ use std::{
     path::{Component, Path, PathBuf},
 };
 
-use zip::{result::ZipResult, write::FileOptions, ZipWriter};
+use zip::{ZipWriter, result::ZipResult, write::FileOptions};
 pub fn zip_create_from_directory_with_options<F>(
     archive_file: &PathBuf,
     directory: &Path,

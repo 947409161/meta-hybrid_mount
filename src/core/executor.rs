@@ -40,6 +40,7 @@ fn extract_module_root(partition_path: &Path) -> Option<PathBuf> {
 }
 
 struct OverlayResult {
+    magic_roots: Vec<PathBuf>,
     fallback_ids: Vec<String>,
     success_records: Vec<(PathBuf, String)>,
 }
@@ -169,6 +170,7 @@ pub fn execute(plan: &MountPlan, config: &config::Config) -> Result<ExecutionRes
                 }
 
                 return OverlayResult {
+                    magic_roots: local_magic,
                     fallback_ids: local_fallback_ids,
                     success_records: Vec::new(),
                 };
@@ -191,6 +193,7 @@ pub fn execute(plan: &MountPlan, config: &config::Config) -> Result<ExecutionRes
             }
 
             OverlayResult {
+                magic_roots: Vec::new(),
                 fallback_ids: Vec::new(),
                 success_records: successes,
             }

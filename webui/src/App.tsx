@@ -11,7 +11,6 @@ import Toast from './components/Toast.tsx';
 import StatusTab from './routes/StatusTab.tsx';
 import ConfigTab from './routes/ConfigTab.tsx';
 import ModulesTab from './routes/ModulesTab.tsx';
-import LogsTab from './routes/LogsTab.tsx';
 import InfoTab from './routes/InfoTab.tsx';
 import GranaryTab from './routes/GranaryTab.tsx';
 
@@ -129,7 +128,6 @@ export default function App() {
             <div class="swipe-page" style={{ width: `${100 / visibleTabs().length}%` }}><div class="page-scroller"><StatusTab /></div></div>
             <div class="swipe-page" style={{ width: `${100 / visibleTabs().length}%` }}><div class="page-scroller"><ConfigTab /></div></div>
             <div class="swipe-page" style={{ width: `${100 / visibleTabs().length}%` }}><div class="page-scroller"><ModulesTab /></div></div>
-            <div class="swipe-page" style={{ width: `${100 / visibleTabs().length}%` }}><div class="page-scroller"><LogsTab /></div></div>
             <div class="swipe-page" style={{ width: `${100 / visibleTabs().length}%` }}><div class="page-scroller"><GranaryTab /></div></div>
             <div class="swipe-page" style={{ width: `${100 / visibleTabs().length}%` }}><div class="page-scroller"><InfoTab /></div></div>
           </div>

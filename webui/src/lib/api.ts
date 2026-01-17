@@ -64,7 +64,6 @@ interface AppAPI {
   scanModules: (path?: string) => Promise<Module[]>;
   saveModules: (modules: Module[]) => Promise<void>;
   saveModuleRules: (moduleId: string, rules: ModuleRules) => Promise<void>;
-  readLogs: (logPath?: string, lines?: number) => Promise<string>;
   getStorageUsage: () => Promise<StorageStatus>;
   getSystemInfo: () => Promise<SystemInfo>;
   getDeviceStatus: () => Promise<DeviceInfo>;
@@ -123,19 +122,9 @@ const RealAPI: AppAPI = {
     if (!ksuExec) throw new Error("No KSU environment");
     const jsonStr = JSON.stringify(rules);
     const hexPayload = stringToHex(jsonStr);
-    // Updated to use the newly implemented backend command
     const cmd = `${PATHS.BINARY} save-module-rules --module "${moduleId}" --payload ${hexPayload}`;
     const { errno, stderr } = await ksuExec(cmd);
     if (errno !== 0) throw new Error(`Failed to save rules: ${stderr}`);
-  },
-
-  readLogs: async (logPath?: string, lines = 1000): Promise<string> => {
-    if (!ksuExec) return "";
-    const f = logPath || (PATHS as any).DAEMON_LOG || "/data/adb/meta-hybrid/daemon.log";
-    const cmd = `[ -f "${f}" ] && tail -n ${lines} "${f}" || echo ""`;
-    const { errno, stdout, stderr } = await ksuExec(cmd);
-    if (errno === 0) return stdout || "";
-    throw new Error(stderr || "Log file not found");
   },
   getStorageUsage: async (): Promise<StorageStatus> => {
     if (!ksuExec) return { size: '-', used: '-', percent: '0%', type: null };

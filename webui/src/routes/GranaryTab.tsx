@@ -1,8 +1,3 @@
-/**
- * Copyright 2025 Meta-Hybrid Mount Authors
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 import { createSignal, createMemo, onMount, Show, For } from "solid-js";
 import { API } from "../lib/api";
 import { store } from "../lib/store";
@@ -53,7 +48,7 @@ export default function GranaryTab() {
     try {
       const list = await API.getGranaryList();
       setSilos(list);
-    } catch (e) {
+    } catch (_e) {
       store.showToast(L_G().loadError || "Failed to load Granary", "error");
     } finally {
       setLoading(false);
@@ -81,6 +76,7 @@ export default function GranaryTab() {
         L_G().restoreSuccess || "Restored successfully.",
         "success",
       );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       store.showToast(e.message, "error");
     } finally {
@@ -98,6 +94,7 @@ export default function GranaryTab() {
       await API.deleteSilo(silo.id);
       setSilos(silos().filter((s) => s.id !== silo.id));
       store.showToast(L_G().deleteSuccess || "Deleted", "success");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       store.showToast(e.message, "error");
     } finally {
@@ -120,6 +117,7 @@ export default function GranaryTab() {
       setShowCreateDialog(false);
       store.showToast(L_G().createSuccess || "Snapshot created", "success");
       await loadSilos();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       store.showToast(e.message, "error");
     } finally {
@@ -203,7 +201,9 @@ export default function GranaryTab() {
           <md-outlined-text-field
             label={L_G().dialogCreateLabel || "Note"}
             value={newSiloReason()}
-            onInput={(e: any) => setNewSiloReason(e.currentTarget.value)}
+            onInput={(e: InputEvent) =>
+              setNewSiloReason((e.currentTarget as HTMLInputElement).value)
+            }
             class="full-width"
             disabled={isCreating()}
           ></md-outlined-text-field>

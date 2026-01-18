@@ -1,8 +1,3 @@
-/**
- * Copyright 2025 Meta-Hybrid Mount Authors
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 import "./Skeleton.css";
 
 interface Props {
@@ -18,7 +13,7 @@ export default function Skeleton(props: Props) {
     "--skeleton-width": props.width || "100%",
     "--skeleton-height": props.height || "20px",
     "--skeleton-radius": props.borderRadius || "12px",
-  } as any;
+  } as Record<string, string | undefined>;
 
   return <div class={`skeleton ${props.class || ""}`} style={styles}></div>;
 }

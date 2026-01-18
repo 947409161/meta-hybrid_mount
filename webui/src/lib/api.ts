@@ -1,8 +1,3 @@
-/**
- * Copyright 2026 Hybrid Mount Authors
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 import { DEFAULT_CONFIG, PATHS } from "./constants";
 import { APP_VERSION } from "./constants_gen";
 import { MockAPI } from "./api.mock";
@@ -25,7 +20,7 @@ interface KsuExecResult {
 }
 
 interface KsuModule {
-  exec: (cmd: string, options?: any) => Promise<KsuExecResult>;
+  exec: (cmd: string, options?: unknown) => Promise<KsuExecResult>;
 }
 
 let ksuExec: KsuModule["exec"] | null = null;
@@ -33,7 +28,7 @@ let ksuExec: KsuModule["exec"] | null = null;
 try {
   const ksu = await import("kernelsu").catch(() => null);
   ksuExec = ksu ? ksu.exec : null;
-} catch (e) {
+} catch (_e) {
   console.warn("KernelSU module not found, defaulting to Mock/Fallback.");
 }
 
@@ -99,7 +94,9 @@ const RealAPI: AppAPI = {
         const loaded = JSON.parse(stdout);
         return { ...DEFAULT_CONFIG, ...loaded };
       }
-    } catch (e) {}
+    } catch (_e) {
+      // ignore
+    }
     return DEFAULT_CONFIG;
   },
   saveConfig: async (config: AppConfig): Promise<void> => {
@@ -116,15 +113,19 @@ const RealAPI: AppAPI = {
     const { errno, stderr } = await ksuExec(cmd);
     if (errno !== 0) throw new Error(`Failed to reset config: ${stderr}`);
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   scanModules: async (_path?: string): Promise<Module[]> => {
     if (!ksuExec) return [];
     const cmd = `${PATHS.BINARY} modules`;
     try {
       const { errno, stdout } = await ksuExec(cmd);
       if (errno === 0 && stdout) return JSON.parse(stdout);
-    } catch (e) {}
+    } catch (_e) {
+      // ignore
+    }
     return [];
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   saveModules: async (_modules: Module[]): Promise<void> => {
     return;
   },
@@ -145,7 +146,7 @@ const RealAPI: AppAPI = {
     if (!ksuExec) return { size: "-", used: "-", percent: "0%", type: null };
     try {
       const stateFile =
-        (PATHS as any).DAEMON_STATE ||
+        (PATHS as Record<string, string>).DAEMON_STATE ||
         "/data/adb/meta-hybrid/run/daemon_state.json";
       const { errno, stdout } = await ksuExec(`cat "${stateFile}"`);
       if (errno === 0 && stdout) {
@@ -157,7 +158,9 @@ const RealAPI: AppAPI = {
           used: formatBytes(state.storage_used ?? 0),
         };
       }
-    } catch (e) {}
+    } catch (_e) {
+      // ignore
+    }
     return { size: "-", used: "-", percent: "0%", type: null };
   },
   getSystemInfo: async (): Promise<SystemInfo> => {
@@ -181,7 +184,7 @@ const RealAPI: AppAPI = {
         });
       }
       const stateFile =
-        (PATHS as any).DAEMON_STATE ||
+        (PATHS as Record<string, string>).DAEMON_STATE ||
         "/data/adb/meta-hybrid/run/daemon_state.json";
       const { errno: errState, stdout: outState } = await ksuExec(
         `cat "${stateFile}"`,
@@ -194,10 +197,12 @@ const RealAPI: AppAPI = {
           if (state.zygisksu_enforce !== undefined) {
             info.zygisksuEnforce = state.zygisksu_enforce ? "1" : "0";
           }
-        } catch {}
+        } catch {
+          // ignore
+        }
       }
       return info;
-    } catch (e) {
+    } catch (_e) {
       return { kernel: "-", selinux: "-", mountBase: "-", activeMounts: [] };
     }
   },
@@ -215,7 +220,9 @@ const RealAPI: AppAPI = {
           android = `${p2.stdout.trim()} (API ${p3.stdout.trim()})`;
         const p4 = await ksuExec("uname -r");
         if (p4.errno === 0) kernel = p4.stdout.trim();
-      } catch {}
+      } catch {
+        // ignore
+      }
     }
     return { model, android, kernel, selinux: "Enforcing" };
   },
@@ -231,7 +238,9 @@ const RealAPI: AppAPI = {
         const match = stdout.match(/^version=(.+)$/m);
         if (match) return match[1].trim();
       }
-    } catch {}
+    } catch {
+      // ignore
+    }
     return APP_VERSION;
   },
   openLink: async (url: string): Promise<void> => {
@@ -262,7 +271,9 @@ const RealAPI: AppAPI = {
             "#" + (match[1].length === 8 ? match[1].substring(2) : match[1])
           );
       }
-    } catch {}
+    } catch {
+      // ignore
+    }
     return null;
   },
   getConflicts: async (): Promise<ConflictEntry[]> => {
@@ -270,7 +281,9 @@ const RealAPI: AppAPI = {
     try {
       const { errno, stdout } = await ksuExec(`${PATHS.BINARY} conflicts`);
       if (errno === 0 && stdout) return JSON.parse(stdout);
-    } catch {}
+    } catch {
+      // ignore
+    }
     return [];
   },
   getDiagnostics: async (): Promise<DiagnosticIssue[]> => {
@@ -278,7 +291,9 @@ const RealAPI: AppAPI = {
     try {
       const { errno, stdout } = await ksuExec(`${PATHS.BINARY} diagnostics`);
       if (errno === 0 && stdout) return JSON.parse(stdout);
-    } catch {}
+    } catch {
+      // ignore
+    }
     return [];
   },
   reboot: async (): Promise<void> => {
@@ -292,7 +307,9 @@ const RealAPI: AppAPI = {
         `${PATHS.BINARY} system-action --action granary-list`,
       );
       if (errno === 0 && stdout) return JSON.parse(stdout);
-    } catch {}
+    } catch {
+      // ignore
+    }
     return [];
   },
   createSilo: async (reason: string): Promise<void> => {

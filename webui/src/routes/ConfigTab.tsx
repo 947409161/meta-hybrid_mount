@@ -64,6 +64,7 @@ export default function ConfigTab() {
   ) {
     store.config = { ...store.config, [key]: value };
     if (key === "granary") {
+      // ignore
     }
   }
 
@@ -131,6 +132,7 @@ export default function ConfigTab() {
   }
 
   const availableModes = createMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const storageModes = (store.storage as any)?.supported_modes;
     if (storageModes && Array.isArray(storageModes)) {
       return storageModes as OverlayMode[];
@@ -195,8 +197,11 @@ export default function ConfigTab() {
               <md-outlined-text-field
                 label={store.L.config.moduleDir}
                 value={store.config.moduledir}
-                onInput={(e: any) =>
-                  updateConfig("moduledir", e.currentTarget.value)
+                onInput={(e: Event) =>
+                  updateConfig(
+                    "moduledir",
+                    (e.currentTarget as HTMLInputElement).value,
+                  )
                 }
                 error={invalidModuleDir()}
                 supporting-text={
@@ -237,8 +242,11 @@ export default function ConfigTab() {
               <md-outlined-text-field
                 label={store.L.config.mountSource}
                 value={store.config.mountsource}
-                onInput={(e: any) =>
-                  updateConfig("mountsource", e.currentTarget.value)
+                onInput={(e: Event) =>
+                  updateConfig(
+                    "mountsource",
+                    (e.currentTarget as HTMLInputElement).value,
+                  )
                 }
                 class="full-width-field"
               >
@@ -275,8 +283,11 @@ export default function ConfigTab() {
               <md-outlined-text-field
                 label={store.L.config?.hybrid_mnt_dir ?? "Mount Point Path"}
                 value={store.config.hybrid_mnt_dir ?? ""}
-                onInput={(e: any) =>
-                  updateConfig("hybrid_mnt_dir", e.currentTarget.value)
+                onInput={(e: Event) =>
+                  updateConfig(
+                    "hybrid_mnt_dir",
+                    (e.currentTarget as HTMLInputElement).value,
+                  )
                 }
                 class="full-width-field"
               >

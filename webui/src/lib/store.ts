@@ -1,8 +1,3 @@
-/**
- * Copyright 2026 Hybrid Mount Authors
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 import { createSignal, createMemo, createEffect } from "solid-js";
 import { API } from "./api";
 import { DEFAULT_CONFIG, DEFAULT_SEED } from "./constants";
@@ -50,7 +45,6 @@ const createGlobalStore = () => {
 
   const [config, setConfig] = createSignal<AppConfig>(DEFAULT_CONFIG);
   const [modules, setModules] = createSignal<Module[]>([]);
-  const [logs, setLogs] = createSignal<LogEntry[]>([]);
   const [device, setDevice] = createSignal<DeviceInfo>({
     model: "-",
     android: "-",
@@ -77,7 +71,6 @@ const createGlobalStore = () => {
 
   const [loadingConfig, setLoadingConfig] = createSignal(false);
   const [loadingModules, setLoadingModules] = createSignal(false);
-  const [loadingLogs, setLoadingLogs] = createSignal(false);
   const [loadingStatus, setLoadingStatus] = createSignal(false);
   const [loadingConflicts, setLoadingConflicts] = createSignal(false);
   const [loadingDiagnostics, setLoadingDiagnostics] = createSignal(false);
@@ -86,10 +79,11 @@ const createGlobalStore = () => {
   const [savingModules, setSavingModules] = createSignal(false);
 
   const availableLanguages: LanguageOption[] = Object.entries(localeModules)
-    .map(([path, mod]: [string, any]) => {
+    .map(([path, mod]: [string, unknown]) => {
       const match = path.match(/\/([^/]+)\.json$/);
       const code = match ? match[1] : "en";
-      const name = mod.default?.lang?.display || code.toUpperCase();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const name = (mod as any).default?.lang?.display || code.toUpperCase();
       return { code, name };
     })
     .sort((a, b) => {
@@ -98,7 +92,8 @@ const createGlobalStore = () => {
       return a.name.localeCompare(b.name);
     });
 
-  const L = createMemo(() => loadedLocale()?.default || {});
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const L = createMemo((): any => loadedLocale()?.default || {});
 
   const modeStats = createMemo((): ModeStats => {
     const stats = { auto: 0, magic: 0, hymofs: 0 };
@@ -195,7 +190,9 @@ const createGlobalStore = () => {
       if (sysColor) {
         setSeed(sysColor);
       }
-    } catch {}
+    } catch (_e) {
+      // ignore
+    }
 
     await Promise.all([loadConfig(), loadStatus()]);
   }
@@ -205,7 +202,7 @@ const createGlobalStore = () => {
     try {
       const data = await API.loadConfig();
       setConfig(data);
-    } catch (e) {
+    } catch (_e) {
       showToast("Failed to load config", "error");
     }
     setLoadingConfig(false);
@@ -216,7 +213,7 @@ const createGlobalStore = () => {
     try {
       await API.saveConfig(config());
       showToast(L().common?.saved || "Saved", "success");
-    } catch (e) {
+    } catch (_e) {
       showToast("Failed to save config", "error");
     }
     setSavingConfig(false);
@@ -231,7 +228,7 @@ const createGlobalStore = () => {
         L().config?.resetSuccess || "Config reset to defaults",
         "success",
       );
-    } catch (e) {
+    } catch (_e) {
       showToast("Failed to reset config", "error");
     }
     setSavingConfig(false);
@@ -242,7 +239,7 @@ const createGlobalStore = () => {
     try {
       const data = await API.scanModules(config().moduledir);
       setModules(data);
-    } catch (e) {
+    } catch (_e) {
       showToast("Failed to load modules", "error");
     }
     setLoadingModules(false);
@@ -253,33 +250,10 @@ const createGlobalStore = () => {
     try {
       await API.saveModules(modules());
       showToast(L().common?.saved || "Saved", "success");
-    } catch (e) {
+    } catch (_e) {
       showToast("Failed to save module modes", "error");
     }
     setSavingModules(false);
-  }
-
-  async function loadLogs(silent: boolean = false) {
-    if (!silent) setLoadingLogs(true);
-    try {
-      const rawLogs = await API.readLogs();
-      const parsed = rawLogs.split("\n").map((line) => {
-        const text = line.replace(
-          /^[\d-]{10}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?\s*/,
-          "",
-        );
-        let type: LogEntry["type"] = "info";
-        if (text.includes("[E]") || text.includes("[ERROR]")) type = "error";
-        else if (text.includes("[W]") || text.includes("[WARN]")) type = "warn";
-        else if (text.includes("[D]") || text.includes("[DEBUG]"))
-          type = "debug";
-        return { text, type };
-      });
-      setLogs(parsed);
-    } catch (e) {
-      setLogs([{ text: "Failed to load logs.", type: "error" }]);
-    }
-    setLoadingLogs(false);
   }
 
   async function loadStatus() {
@@ -306,7 +280,9 @@ const createGlobalStore = () => {
       const diag = await API.getDiagnostics();
       setDiagnostics(diag);
       setLoadingDiagnostics(false);
-    } catch (e) {}
+    } catch (_e) {
+      // ignore
+    }
     setLoadingStatus(false);
   }
 
@@ -321,7 +297,7 @@ const createGlobalStore = () => {
           "success",
         );
       }
-    } catch (e) {
+    } catch (_e) {
       showToast(
         L().modules?.conflictError || "Failed to check conflicts",
         "error",
@@ -392,11 +368,6 @@ const createGlobalStore = () => {
     loadModules,
     saveModules,
 
-    get logs() {
-      return logs();
-    },
-    loadLogs,
-
     get device() {
       return device();
     },
@@ -431,9 +402,6 @@ const createGlobalStore = () => {
         },
         get modules() {
           return loadingModules();
-        },
-        get logs() {
-          return loadingLogs();
         },
         get status() {
           return loadingStatus();

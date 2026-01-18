@@ -70,6 +70,7 @@ export default function ModulesTab() {
         store.L.modules?.saveSuccess || "Saved successfully",
         "success",
       );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       store.showToast(e.message || "Failed to save", "error");
     } finally {

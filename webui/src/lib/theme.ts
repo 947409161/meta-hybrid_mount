@@ -39,7 +39,7 @@ export const Monet = {
     let seedArgb;
     try {
       seedArgb = argbFromHex(seedHex);
-    } catch (e) {
+    } catch (_e) {
       return;
     }
 

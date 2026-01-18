@@ -1,8 +1,3 @@
-/**
- * Copyright 2025 Meta-Hybrid Mount Authors
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 import { APP_VERSION } from "./constants_gen";
 import { DEFAULT_CONFIG } from "./constants";
 import type {
@@ -49,7 +44,8 @@ export const MockAPI = {
     await delay(500);
     console.log("[Mock] Config reset to defaults");
   },
-  async scanModules(dir: string): Promise<Module[]> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async scanModules(_dir: string): Promise<Module[]> {
     await delay(600);
     return [
       {
@@ -97,7 +93,8 @@ export const MockAPI = {
     await delay(400);
     console.log(`[Mock] Rules saved for ${moduleId}:`, rules);
   },
-  async saveModules(modules: Module[]): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async saveModules(_modules: Module[]): Promise<void> {
     console.warn("[Mock] saveModules is deprecated");
   },
   async readLogs(): Promise<string> {

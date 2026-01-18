@@ -1,8 +1,3 @@
-/**
- * Copyright 2025 Meta-Hybrid Mount Authors
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 import { createSignal, onMount, Show, For, createMemo } from "solid-js";
 import { store } from "../lib/store";
 import { API } from "../lib/api";
@@ -40,8 +35,8 @@ export default function InfoTab() {
   const [version, setVersion] = createSignal(store.version);
   const [activeQr, setActiveQr] = createSignal<string>("");
 
-  let donateDialogRef: any;
-  let qrDialogRef: any;
+  let donateDialogRef: HTMLElement | undefined;
+  let qrDialogRef: HTMLElement | undefined;
 
   const isDev = createMemo(() => {
     return !/^v\d+\.\d+\.\d+$/.test(version());
@@ -51,8 +46,8 @@ export default function InfoTab() {
     try {
       const v = await API.getVersion();
       if (v) setVersion(v);
-    } catch (e) {
-      console.error(e);
+    } catch (_e) {
+      console.error(_e);
     }
     await fetchContributors();
   });
@@ -67,7 +62,7 @@ export default function InfoTab() {
           setLoading(false);
           return;
         }
-      } catch (e) {
+      } catch (_e) {
         localStorage.removeItem(CACHE_KEY);
       }
     }
@@ -126,20 +121,24 @@ export default function InfoTab() {
 
   function openDonate(e: MouseEvent) {
     e.preventDefault();
-    donateDialogRef?.show();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (donateDialogRef as any)?.show();
   }
 
   function closeDonate() {
-    donateDialogRef?.close();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (donateDialogRef as any)?.close();
   }
 
   function openQr(path: string) {
     setActiveQr(path);
-    qrDialogRef?.show();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (qrDialogRef as any)?.show();
   }
 
   function closeQr() {
-    qrDialogRef?.close();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (qrDialogRef as any)?.close();
   }
 
   return (

@@ -73,7 +73,9 @@
   flex-direction: column;
   justify-content: space-between;
   gap: 12px;
-  transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1), transform 0.2s;
+  transition:
+    background-color 0.2s cubic-bezier(0.2, 0, 0, 1),
+    transform 0.2s;
   border: none;
   text-align: left;
   position: relative;
@@ -97,7 +99,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
   background-color: var(--md-sys-color-surface-container-high);
   color: var(--md-sys-color-on-surface-variant);
 }
@@ -176,11 +180,11 @@
   color: var(--md-sys-color-on-error-container);
 }
 .webui-label {
-    margin: 0 0 8px 8px;
-    font-size: 13px; 
-    font-weight: 500; 
-    color: var(--md-sys-color-primary); 
-    opacity: 0.8;
+  margin: 0 0 8px 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--md-sys-color-primary);
+  opacity: 0.8;
 }
 md-icon svg {
   fill: currentColor;

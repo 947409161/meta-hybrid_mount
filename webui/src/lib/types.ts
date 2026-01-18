@@ -13,7 +13,7 @@ export interface ModuleRules {
   paths: Record<string, string>;
 }
 
-export type OverlayMode = 'tmpfs' | 'ext4' | 'erofs';
+export type OverlayMode = "tmpfs" | "ext4" | "erofs";
 
 export interface AppConfig {
   moduledir: string;
@@ -28,7 +28,7 @@ export interface AppConfig {
   granary: GranaryConfig;
 }
 
-export type MountMode = 'overlay' | 'magic' | 'ignore';
+export type MountMode = "overlay" | "magic" | "ignore";
 
 export interface Module {
   id: string;
@@ -47,7 +47,7 @@ export interface StorageStatus {
   size: string;
   used: string;
   percent: string;
-  type: 'tmpfs' | 'ext4' | 'erofs' | 'unknown' | null;
+  type: "tmpfs" | "ext4" | "erofs" | "unknown" | null;
   error?: string;
   hymofs_available?: boolean;
 }
@@ -71,7 +71,7 @@ export interface DeviceInfo {
 export interface ToastMessage {
   id: string;
   text: string;
-  type: 'info' | 'success' | 'error';
+  type: "info" | "success" | "error";
   visible: boolean;
 }
 
@@ -103,7 +103,7 @@ export interface Silo {
 }
 
 export interface DiagnosticIssue {
-  level: 'Info' | 'Warning' | 'Critical';
+  level: "Info" | "Warning" | "Critical";
   context: string;
   message: string;
 }

@@ -10,22 +10,27 @@ declare global {
 }
 
 window.litDisableBundleWarning = true;
-const viewportContent = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+const viewportContent =
+  "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover";
 let meta = document.querySelector('meta[name="viewport"]');
 if (!meta) {
-    meta = document.createElement('meta');
-    meta.setAttribute('name', 'viewport');
-    document.head.appendChild(meta);
+  meta = document.createElement("meta");
+  meta.setAttribute("name", "viewport");
+  document.head.appendChild(meta);
 }
-meta.setAttribute('content', viewportContent);
-document.addEventListener('touchmove', (event) => {
+meta.setAttribute("content", viewportContent);
+document.addEventListener(
+  "touchmove",
+  (event) => {
     if (event.touches.length > 1) {
-        event.preventDefault();
+      event.preventDefault();
     }
-}, { passive: false });
+  },
+  { passive: false },
+);
 
-document.addEventListener('gesturestart', (event) => {
-    event.preventDefault();
+document.addEventListener("gesturestart", (event) => {
+  event.preventDefault();
 });
 
 export {};

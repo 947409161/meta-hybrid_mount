@@ -3,10 +3,20 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { DEFAULT_CONFIG, PATHS } from './constants';
-import { APP_VERSION } from './constants_gen';
-import { MockAPI } from './api.mock';
-import type { AppConfig, Module, StorageStatus, SystemInfo, DeviceInfo, ConflictEntry, DiagnosticIssue, Silo, ModuleRules } from './types';
+import { DEFAULT_CONFIG, PATHS } from "./constants";
+import { APP_VERSION } from "./constants_gen";
+import { MockAPI } from "./api.mock";
+import type {
+  AppConfig,
+  Module,
+  StorageStatus,
+  SystemInfo,
+  DeviceInfo,
+  ConflictEntry,
+  DiagnosticIssue,
+  Silo,
+  ModuleRules,
+} from "./types";
 
 interface KsuExecResult {
   errno: number;
@@ -18,10 +28,10 @@ interface KsuModule {
   exec: (cmd: string, options?: any) => Promise<KsuExecResult>;
 }
 
-let ksuExec: KsuModule['exec'] | null = null;
+let ksuExec: KsuModule["exec"] | null = null;
 
 try {
-  const ksu = await import('kernelsu').catch(() => null);
+  const ksu = await import("kernelsu").catch(() => null);
   ksuExec = ksu ? ksu.exec : null;
 } catch (e) {
   console.warn("KernelSU module not found, defaulting to Mock/Fallback.");
@@ -30,29 +40,29 @@ try {
 const shouldUseMock = import.meta.env.DEV || !ksuExec;
 
 function formatBytes(bytes: number, decimals = 2): string {
-  if (!+bytes) return '0 B';
+  if (!+bytes) return "0 B";
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
 
 function stringToHex(str: string): string {
   let bytes: Uint8Array;
-  if (typeof TextEncoder !== 'undefined') {
+  if (typeof TextEncoder !== "undefined") {
     const encoder = new TextEncoder();
     bytes = encoder.encode(str);
   } else {
     bytes = new Uint8Array(str.length);
     for (let i = 0; i < str.length; i++) {
-      bytes[i] = str.charCodeAt(i) & 0xFF;
+      bytes[i] = str.charCodeAt(i) & 0xff;
     }
   }
-  let hex = '';
+  let hex = "";
   for (let i = 0; i < bytes.length; i++) {
     const h = bytes[i].toString(16);
-    hex += (h.length === 1 ? '0' + h : h);
+    hex += h.length === 1 ? "0" + h : h;
   }
   return hex;
 }
@@ -115,10 +125,15 @@ const RealAPI: AppAPI = {
     } catch (e) {}
     return [];
   },
-  saveModules: async (_modules: Module[]): Promise<void> => { return; },
-  
+  saveModules: async (_modules: Module[]): Promise<void> => {
+    return;
+  },
+
   // Reverted to standard command execution
-  saveModuleRules: async (moduleId: string, rules: ModuleRules): Promise<void> => {
+  saveModuleRules: async (
+    moduleId: string,
+    rules: ModuleRules,
+  ): Promise<void> => {
     if (!ksuExec) throw new Error("No KSU environment");
     const jsonStr = JSON.stringify(rules);
     const hexPayload = stringToHex(jsonStr);
@@ -127,91 +142,125 @@ const RealAPI: AppAPI = {
     if (errno !== 0) throw new Error(`Failed to save rules: ${stderr}`);
   },
   getStorageUsage: async (): Promise<StorageStatus> => {
-    if (!ksuExec) return { size: '-', used: '-', percent: '0%', type: null };
+    if (!ksuExec) return { size: "-", used: "-", percent: "0%", type: null };
     try {
-      const stateFile = (PATHS as any).DAEMON_STATE || "/data/adb/meta-hybrid/run/daemon_state.json";
+      const stateFile =
+        (PATHS as any).DAEMON_STATE ||
+        "/data/adb/meta-hybrid/run/daemon_state.json";
       const { errno, stdout } = await ksuExec(`cat "${stateFile}"`);
       if (errno === 0 && stdout) {
         const state = JSON.parse(stdout);
         return {
-          type: state.storage_mode || 'unknown',
+          type: state.storage_mode || "unknown",
           percent: `${state.storage_percent ?? 0}%`,
           size: formatBytes(state.storage_total ?? 0),
-          used: formatBytes(state.storage_used ?? 0)
+          used: formatBytes(state.storage_used ?? 0),
         };
       }
     } catch (e) {}
-    return { size: '-', used: '-', percent: '0%', type: null };
+    return { size: "-", used: "-", percent: "0%", type: null };
   },
   getSystemInfo: async (): Promise<SystemInfo> => {
-    if (!ksuExec) return { kernel: '-', selinux: '-', mountBase: '-', activeMounts: [] };
+    if (!ksuExec)
+      return { kernel: "-", selinux: "-", mountBase: "-", activeMounts: [] };
     try {
       const cmdSys = `echo "KERNEL:$(uname -r)"; echo "SELINUX:$(getenforce)"`;
       const { errno: errSys, stdout: outSys } = await ksuExec(cmdSys);
-      let info: SystemInfo = { kernel: '-', selinux: '-', mountBase: '-', activeMounts: [] };
+      const info: SystemInfo = {
+        kernel: "-",
+        selinux: "-",
+        mountBase: "-",
+        activeMounts: [],
+      };
       if (errSys === 0 && outSys) {
-        outSys.split('\n').forEach(line => {
-          if (line.startsWith('KERNEL:')) info.kernel = line.substring(7).trim();
-          else if (line.startsWith('SELINUX:')) info.selinux = line.substring(8).trim();
+        outSys.split("\n").forEach((line) => {
+          if (line.startsWith("KERNEL:"))
+            info.kernel = line.substring(7).trim();
+          else if (line.startsWith("SELINUX:"))
+            info.selinux = line.substring(8).trim();
         });
       }
-      const stateFile = (PATHS as any).DAEMON_STATE || "/data/adb/meta-hybrid/run/daemon_state.json";
-      const { errno: errState, stdout: outState } = await ksuExec(`cat "${stateFile}"`);
+      const stateFile =
+        (PATHS as any).DAEMON_STATE ||
+        "/data/adb/meta-hybrid/run/daemon_state.json";
+      const { errno: errState, stdout: outState } = await ksuExec(
+        `cat "${stateFile}"`,
+      );
       if (errState === 0 && outState) {
         try {
           const state = JSON.parse(outState);
-          info.mountBase = state.mount_point || 'Unknown';
+          info.mountBase = state.mount_point || "Unknown";
           info.activeMounts = state.active_mounts || [];
           if (state.zygisksu_enforce !== undefined) {
-             info.zygisksuEnforce = state.zygisksu_enforce ? '1' : '0';
+            info.zygisksuEnforce = state.zygisksu_enforce ? "1" : "0";
           }
         } catch {}
       }
       return info;
     } catch (e) {
-      return { kernel: '-', selinux: '-', mountBase: '-', activeMounts: [] };
+      return { kernel: "-", selinux: "-", mountBase: "-", activeMounts: [] };
     }
   },
   getDeviceStatus: async (): Promise<DeviceInfo> => {
-    let model = "Device", android = "14", kernel = "Unknown";
+    let model = "Device",
+      android = "14",
+      kernel = "Unknown";
     if (ksuExec) {
-        try {
-            const p1 = await ksuExec('getprop ro.product.model');
-            if (p1.errno === 0) model = p1.stdout.trim();
-            const p2 = await ksuExec('getprop ro.build.version.release');
-            const p3 = await ksuExec('getprop ro.build.version.sdk');
-            if (p2.errno === 0) android = `${p2.stdout.trim()} (API ${p3.stdout.trim()})`;
-            const p4 = await ksuExec('uname -r');
-            if (p4.errno === 0) kernel = p4.stdout.trim();
-        } catch {}
+      try {
+        const p1 = await ksuExec("getprop ro.product.model");
+        if (p1.errno === 0) model = p1.stdout.trim();
+        const p2 = await ksuExec("getprop ro.build.version.release");
+        const p3 = await ksuExec("getprop ro.build.version.sdk");
+        if (p2.errno === 0)
+          android = `${p2.stdout.trim()} (API ${p3.stdout.trim()})`;
+        const p4 = await ksuExec("uname -r");
+        if (p4.errno === 0) kernel = p4.stdout.trim();
+      } catch {}
     }
     return { model, android, kernel, selinux: "Enforcing" };
   },
   getVersion: async (): Promise<string> => {
     if (!ksuExec) return APP_VERSION;
     try {
-        const binPath = PATHS.BINARY;
-        const moduleDir = binPath.substring(0, binPath.lastIndexOf('/'));
-        const { errno, stdout } = await ksuExec(`grep "^version=" "${moduleDir}/module.prop"`);
-        if (errno === 0 && stdout) {
-            const match = stdout.match(/^version=(.+)$/m);
-            if (match) return match[1].trim();
-        }
+      const binPath = PATHS.BINARY;
+      const moduleDir = binPath.substring(0, binPath.lastIndexOf("/"));
+      const { errno, stdout } = await ksuExec(
+        `grep "^version=" "${moduleDir}/module.prop"`,
+      );
+      if (errno === 0 && stdout) {
+        const match = stdout.match(/^version=(.+)$/m);
+        if (match) return match[1].trim();
+      }
     } catch {}
     return APP_VERSION;
   },
   openLink: async (url: string): Promise<void> => {
-    if (!ksuExec) { window.open(url, '_blank'); return; }
-    await ksuExec(`am start -a android.intent.action.VIEW -d "${url.replace(/"/g, '\\"')}"`);
+    if (!ksuExec) {
+      window.open(url, "_blank");
+      return;
+    }
+    await ksuExec(
+      `am start -a android.intent.action.VIEW -d "${url.replace(/"/g, '\\"')}"`,
+    );
   },
   fetchSystemColor: async (): Promise<string | null> => {
     if (!ksuExec) return null;
     try {
-      const { stdout } = await ksuExec('settings get secure theme_customization_overlay_packages');
+      const { stdout } = await ksuExec(
+        "settings get secure theme_customization_overlay_packages",
+      );
       if (stdout) {
-        const match = /["']?android\.theme\.customization\.system_palette["']?\s*:\s*["']?#?([0-9a-fA-F]{6,8})["']?/i.exec(stdout) || 
-                      /["']?source_color["']?\s*:\s*["']?#?([0-9a-fA-F]{6,8})["']?/i.exec(stdout);
-        if (match?.[1]) return '#' + (match[1].length === 8 ? match[1].substring(2) : match[1]);
+        const match =
+          /["']?android\.theme\.customization\.system_palette["']?\s*:\s*["']?#?([0-9a-fA-F]{6,8})["']?/i.exec(
+            stdout,
+          ) ||
+          /["']?source_color["']?\s*:\s*["']?#?([0-9a-fA-F]{6,8})["']?/i.exec(
+            stdout,
+          );
+        if (match?.[1])
+          return (
+            "#" + (match[1].length === 8 ? match[1].substring(2) : match[1])
+          );
       }
     } catch {}
     return null;
@@ -219,28 +268,30 @@ const RealAPI: AppAPI = {
   getConflicts: async (): Promise<ConflictEntry[]> => {
     if (!ksuExec) return [];
     try {
-        const { errno, stdout } = await ksuExec(`${PATHS.BINARY} conflicts`);
-        if (errno === 0 && stdout) return JSON.parse(stdout);
+      const { errno, stdout } = await ksuExec(`${PATHS.BINARY} conflicts`);
+      if (errno === 0 && stdout) return JSON.parse(stdout);
     } catch {}
     return [];
   },
   getDiagnostics: async (): Promise<DiagnosticIssue[]> => {
-      if (!ksuExec) return [];
-      try {
-          const { errno, stdout } = await ksuExec(`${PATHS.BINARY} diagnostics`);
-          if (errno === 0 && stdout) return JSON.parse(stdout);
-      } catch {}
-      return [];
+    if (!ksuExec) return [];
+    try {
+      const { errno, stdout } = await ksuExec(`${PATHS.BINARY} diagnostics`);
+      if (errno === 0 && stdout) return JSON.parse(stdout);
+    } catch {}
+    return [];
   },
   reboot: async (): Promise<void> => {
     if (!ksuExec) return;
-    await ksuExec('reboot');
+    await ksuExec("reboot");
   },
   getGranaryList: async (): Promise<Silo[]> => {
     if (!ksuExec) return [];
     try {
-        const { errno, stdout } = await ksuExec(`${PATHS.BINARY} system-action --action granary-list`);
-        if (errno === 0 && stdout) return JSON.parse(stdout);
+      const { errno, stdout } = await ksuExec(
+        `${PATHS.BINARY} system-action --action granary-list`,
+      );
+      if (errno === 0 && stdout) return JSON.parse(stdout);
     } catch {}
     return [];
   },
@@ -261,7 +312,9 @@ const RealAPI: AppAPI = {
     const cmd = `${PATHS.BINARY} system-action --action granary-restore --value "${siloId}"`;
     const { errno, stderr } = await ksuExec(cmd);
     if (errno !== 0) throw new Error(stderr);
-  }
+  },
 };
 
-export const API: AppAPI = shouldUseMock ? (MockAPI as unknown as AppAPI) : RealAPI;
+export const API: AppAPI = shouldUseMock
+  ? (MockAPI as unknown as AppAPI)
+  : RealAPI;

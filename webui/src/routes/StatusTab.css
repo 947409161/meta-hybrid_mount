@@ -12,7 +12,7 @@
 .storage-card {
   background-color: var(--md-sys-color-primary-container);
   color: var(--md-sys-color-on-primary-container);
-  border-radius: 28px; 
+  border-radius: 28px;
   padding: 28px 24px;
   display: flex;
   flex-direction: column;
@@ -82,7 +82,7 @@
   font-family: var(--md-ref-typeface-plain);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  background: rgba(0,0,0,0.1); 
+  background: rgba(0, 0, 0, 0.1);
   color: currentColor;
 }
 
@@ -123,9 +123,9 @@
 }
 md-linear-progress {
   width: 100%;
-  --md-linear-progress-track-color: rgba(0,0,0,0.1);
+  --md-linear-progress-track-color: rgba(0, 0, 0, 0.1);
   --md-linear-progress-active-indicator-color: currentColor;
-  border-radius: 6px; 
+  border-radius: 6px;
 }
 .storage-details {
   display: flex;
@@ -138,7 +138,7 @@ md-linear-progress {
   font-family: var(--md-ref-typeface-mono);
 }
 .detail-path {
-  background: rgba(0,0,0,0.08);
+  background: rgba(0, 0, 0, 0.08);
   padding: 4px 8px;
   border-radius: 6px;
   max-width: 60%;
@@ -221,8 +221,8 @@ md-linear-progress {
   color: var(--md-sys-color-on-surface);
 }
 .mode-divider {
-  height: 1px; 
-  background-color: var(--md-sys-color-outline-variant); 
+  height: 1px;
+  background-color: var(--md-sys-color-outline-variant);
   opacity: 0.5;
 }
 .skeleton-group {
@@ -305,7 +305,7 @@ md-linear-progress {
   gap: 12px;
   font-size: 13px;
   align-items: flex-start;
-  background: rgba(0,0,0,0.03);
+  background: rgba(0, 0, 0, 0.03);
   padding: 10px;
   border-radius: 12px;
 }
@@ -336,18 +336,40 @@ md-icon svg {
   fill: currentColor;
 }
 .reboot-btn {
-  --md-filled-tonal-icon-button-container-color: var(--md-sys-color-error-container);
-  --md-filled-tonal-icon-button-icon-color: var(--md-sys-color-on-error-container);
-  --md-filled-tonal-icon-button-hover-state-layer-color: var(--md-sys-color-on-error-container);
+  --md-filled-tonal-icon-button-container-color: var(
+    --md-sys-color-error-container
+  );
+  --md-filled-tonal-icon-button-icon-color: var(
+    --md-sys-color-on-error-container
+  );
+  --md-filled-tonal-icon-button-hover-state-layer-color: var(
+    --md-sys-color-on-error-container
+  );
 }
 md-dialog.transparent-scrim {
   --md-dialog-scrim-color: transparent;
   --md-sys-color-scrim: transparent;
 }
-.skeleton-col { display: flex; flex-direction: column; gap: 8px; }
-.mt-8 { margin-top: 8px; }
-.mb-8 { margin-bottom: 8px; }
-.action-row { display: flex; gap: 8px; align-items: center; }
+.skeleton-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mt-8 {
+  margin-top: 8px;
+}
+.mb-8 {
+  margin-bottom: 8px;
+}
+.action-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 
-.dot.secondary { background-color: var(--md-sys-color-secondary); }
-.dot.tertiary { background-color: var(--md-sys-color-tertiary); }
+.dot.secondary {
+  background-color: var(--md-sys-color-secondary);
+}
+.dot.tertiary {
+  background-color: var(--md-sys-color-tertiary);
+}

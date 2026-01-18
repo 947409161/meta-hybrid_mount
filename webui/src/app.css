@@ -8,12 +8,19 @@
   --md-sys-shape-corner-large: 16px;
   --md-sys-shape-corner-full: 9999px;
   --md-sys-color-shadow: #000000;
-  --md-sys-elevation-1: 0 1px 2px 0 var(--md-sys-color-shadow), 0 1px 3px 1px var(--md-sys-color-shadow);
-  --md-sys-elevation-2: 0 1px 2px 0 var(--md-sys-color-shadow), 0 2px 6px 2px var(--md-sys-color-shadow);
-  --md-sys-elevation-3: 0 4px 8px 3px var(--md-sys-color-shadow), 0 1px 3px 0 var(--md-sys-color-shadow);
-  --font-common: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --md-sys-elevation-1:
+    0 1px 2px 0 var(--md-sys-color-shadow),
+    0 1px 3px 1px var(--md-sys-color-shadow);
+  --md-sys-elevation-2:
+    0 1px 2px 0 var(--md-sys-color-shadow),
+    0 2px 6px 2px var(--md-sys-color-shadow);
+  --md-sys-elevation-3:
+    0 4px 8px 3px var(--md-sys-color-shadow),
+    0 1px 3px 0 var(--md-sys-color-shadow);
+  --font-common:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --md-ref-typeface-plain: var(--font-stack);
-  --md-ref-typeface-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --md-ref-typeface-mono: "JetBrains Mono", "Fira Code", monospace;
 }
 
 * {
@@ -22,7 +29,9 @@
   touch-action: pan-x pan-y;
 }
 
-html, body, #app {
+html,
+body,
+#app {
   height: 100%;
   width: 100%;
   margin: 0;
@@ -38,7 +47,10 @@ html, body, #app {
   overscroll-behavior: none;
 }
 
-input, select, textarea, button {
+input,
+select,
+textarea,
+button {
   font-family: inherit;
 }
 
@@ -104,7 +116,7 @@ button:active {
 }
 
 .btn-icon:hover {
-  background-color: rgba(128,128,128, 0.1);
+  background-color: rgba(128, 128, 128, 0.1);
 }
 
 .md3-card {
@@ -123,7 +135,8 @@ button:active {
   position: relative;
 }
 
-.text-field input, .text-field select {
+.text-field input,
+.text-field select {
   width: 100%;
   height: 56px;
   background: var(--md-sys-color-surface-container-highest);
@@ -138,7 +151,8 @@ button:active {
   appearance: none;
 }
 
-.text-field input:focus, .text-field select:focus {
+.text-field input:focus,
+.text-field select:focus {
   border-bottom: 2px solid var(--md-sys-color-primary);
   border-color: var(--md-sys-color-primary);
   background: var(--md-sys-color-surface-container-highest);
@@ -169,7 +183,11 @@ button:active {
   left: 0;
   right: 0;
   padding: 16px 24px calc(16px + var(--safe-area-inset-bottom, 0px)) 24px;
-  background: linear-gradient(to top, var(--md-sys-color-surface) 85%, transparent);
+  background: linear-gradient(
+    to top,
+    var(--md-sys-color-surface) 85%,
+    transparent
+  );
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -182,7 +200,8 @@ button:active {
   pointer-events: auto;
 }
 
-code, pre {
+code,
+pre {
   font-family: var(--md-ref-typeface-mono);
 }
 

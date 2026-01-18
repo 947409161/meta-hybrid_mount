@@ -3,31 +3,31 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { createSignal, createMemo, onMount, Show } from 'solid-js';
-import { store } from './lib/store';
-import TopBar from './components/TopBar.tsx';
-import NavBar from './components/NavBar.tsx';
-import Toast from './components/Toast.tsx';
-import StatusTab from './routes/StatusTab.tsx';
-import ConfigTab from './routes/ConfigTab.tsx';
-import ModulesTab from './routes/ModulesTab.tsx';
-import InfoTab from './routes/InfoTab.tsx';
-import GranaryTab from './routes/GranaryTab.tsx';
+import { createSignal, createMemo, onMount, Show } from "solid-js";
+import { store } from "./lib/store";
+import TopBar from "./components/TopBar.tsx";
+import NavBar from "./components/NavBar.tsx";
+import Toast from "./components/Toast.tsx";
+import StatusTab from "./routes/StatusTab.tsx";
+import ConfigTab from "./routes/ConfigTab.tsx";
+import ModulesTab from "./routes/ModulesTab.tsx";
+import InfoTab from "./routes/InfoTab.tsx";
+import GranaryTab from "./routes/GranaryTab.tsx";
 
 export default function App() {
-  const [activeTab, setActiveTab] = createSignal('status');
+  const [activeTab, setActiveTab] = createSignal("status");
   const [dragOffset, setDragOffset] = createSignal(0);
   const [isDragging, setIsDragging] = createSignal(false);
   const [isReady, setIsReady] = createSignal(false);
-  
+
   let containerRef: HTMLDivElement | undefined;
   let containerWidth = 0;
-  
+
   let touchStartX = 0;
   let touchStartY = 0;
 
   const visibleTabs = createMemo(() => {
-    return ['status', 'config', 'modules', 'granary', 'info'];
+    return ["status", "config", "modules", "granary", "info"];
   });
 
   const baseTranslateX = createMemo(() => {
@@ -54,13 +54,16 @@ export default function App() {
     const diffY = currentY - touchStartY;
 
     if (Math.abs(diffY) > Math.abs(diffX)) return;
-    
+
     if (e.cancelable) e.preventDefault();
 
     const tabs = visibleTabs();
     const currentIndex = tabs.indexOf(activeTab());
 
-    if ((currentIndex === 0 && diffX > 0) || (currentIndex === tabs.length - 1 && diffX < 0)) {
+    if (
+      (currentIndex === 0 && diffX > 0) ||
+      (currentIndex === tabs.length - 1 && diffX < 0)
+    ) {
       diffX = diffX / 3;
     }
     setDragOffset(diffX);
@@ -69,9 +72,9 @@ export default function App() {
   function handleTouchEnd() {
     if (!isDragging()) return;
     setIsDragging(false);
-    
+
     if (containerRef) {
-        containerWidth = containerRef.clientWidth;
+      containerWidth = containerRef.clientWidth;
     }
 
     const threshold = containerWidth * 0.33 || 80;
@@ -102,34 +105,74 @@ export default function App() {
 
   return (
     <div class="app-root">
-      <Show when={isReady()} fallback={
-        <div class="loading-container">
-           <div class="spinner"></div>
-           <span class="loading-text">Loading...</span>
-        </div>
-      }>
+      <Show
+        when={isReady()}
+        fallback={
+          <div class="loading-container">
+            <div class="spinner"></div>
+            <span class="loading-text">Loading...</span>
+          </div>
+        }
+      >
         <TopBar />
-        <main 
-          class="main-content" 
+        <main
+          class="main-content"
           ref={containerRef}
-          onTouchStart={handleTouchStart} 
+          onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
         >
-          <div 
+          <div
             class="swipe-track"
             style={{
-                transform: `translateX(calc(${baseTranslateX()}% + ${dragOffset()}px))`,
-                width: `${visibleTabs().length * 100}%`,
-                transition: isDragging() ? 'none' : 'transform 0.4s cubic-bezier(0.2, 1, 0.2, 1)'
+              transform: `translateX(calc(${baseTranslateX()}% + ${dragOffset()}px))`,
+              width: `${visibleTabs().length * 100}%`,
+              transition: isDragging()
+                ? "none"
+                : "transform 0.4s cubic-bezier(0.2, 1, 0.2, 1)",
             }}
           >
-            <div class="swipe-page" style={{ width: `${100 / visibleTabs().length}%` }}><div class="page-scroller"><StatusTab /></div></div>
-            <div class="swipe-page" style={{ width: `${100 / visibleTabs().length}%` }}><div class="page-scroller"><ConfigTab /></div></div>
-            <div class="swipe-page" style={{ width: `${100 / visibleTabs().length}%` }}><div class="page-scroller"><ModulesTab /></div></div>
-            <div class="swipe-page" style={{ width: `${100 / visibleTabs().length}%` }}><div class="page-scroller"><GranaryTab /></div></div>
-            <div class="swipe-page" style={{ width: `${100 / visibleTabs().length}%` }}><div class="page-scroller"><InfoTab /></div></div>
+            <div
+              class="swipe-page"
+              style={{ width: `${100 / visibleTabs().length}%` }}
+            >
+              <div class="page-scroller">
+                <StatusTab />
+              </div>
+            </div>
+            <div
+              class="swipe-page"
+              style={{ width: `${100 / visibleTabs().length}%` }}
+            >
+              <div class="page-scroller">
+                <ConfigTab />
+              </div>
+            </div>
+            <div
+              class="swipe-page"
+              style={{ width: `${100 / visibleTabs().length}%` }}
+            >
+              <div class="page-scroller">
+                <ModulesTab />
+              </div>
+            </div>
+            <div
+              class="swipe-page"
+              style={{ width: `${100 / visibleTabs().length}%` }}
+            >
+              <div class="page-scroller">
+                <GranaryTab />
+              </div>
+            </div>
+            <div
+              class="swipe-page"
+              style={{ width: `${100 / visibleTabs().length}%` }}
+            >
+              <div class="page-scroller">
+                <InfoTab />
+              </div>
+            </div>
           </div>
         </main>
         <NavBar activeTab={activeTab()} onTabChange={switchTab} />

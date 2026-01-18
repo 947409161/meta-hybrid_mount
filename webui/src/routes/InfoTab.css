@@ -16,7 +16,7 @@
   gap: 16px;
   padding: 40px 0;
   background-color: var(--md-sys-color-surface-container);
-  border-radius: 32px; 
+  border-radius: 32px;
   box-shadow: none;
 }
 .app-logo {
@@ -34,7 +34,7 @@
   overflow: visible;
 }
 .app-name {
-  font-size: 32px;  
+  font-size: 32px;
   font-weight: 600;
   color: var(--md-sys-color-on-surface);
   margin-top: 8px;
@@ -45,7 +45,7 @@
   font-size: 14px;
   background: var(--md-sys-color-surface-container-high);
   padding: 8px 20px;
-  border-radius: 9999px;  
+  border-radius: 9999px;
   color: var(--md-sys-color-primary);
   font-weight: 500;
 }
@@ -62,10 +62,18 @@
 .donate-btn {
   /* 确保 Donate 按钮横跨两列 */
   grid-column: 1 / -1;
-  --md-filled-tonal-button-container-color: var(--md-sys-color-tertiary-container);
-  --md-filled-tonal-button-label-text-color: var(--md-sys-color-on-tertiary-container);
-  --md-filled-tonal-button-icon-color: var(--md-sys-color-on-tertiary-container);
-  --md-filled-tonal-button-hover-state-layer-color: var(--md-sys-color-on-tertiary-container);
+  --md-filled-tonal-button-container-color: var(
+    --md-sys-color-tertiary-container
+  );
+  --md-filled-tonal-button-label-text-color: var(
+    --md-sys-color-on-tertiary-container
+  );
+  --md-filled-tonal-button-icon-color: var(
+    --md-sys-color-on-tertiary-container
+  );
+  --md-filled-tonal-button-hover-state-layer-color: var(
+    --md-sys-color-on-tertiary-container
+  );
 }
 .contributors-section {
   display: flex;
@@ -73,7 +81,7 @@
   gap: 8px;
 }
 .section-title {
-  font-size: 20px;  
+  font-size: 20px;
   font-weight: 400;
   margin: 0 0 8px 8px;
   color: var(--md-sys-color-on-surface);
@@ -117,56 +125,71 @@
 }
 
 @keyframes logo-spin-cw {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes logo-spin-ccw {
-  from { transform: rotate(360deg); }
-  to { transform: rotate(0deg); }
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
 }
 
 @keyframes logo-pulse-fast {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(0.9); opacity: 0.8; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
 }
 
 .logo-base-track {
-    fill: none;
-    stroke: var(--md-sys-color-surface-variant);
-    opacity: 0.3;
-    stroke-width: 1;
+  fill: none;
+  stroke: var(--md-sys-color-surface-variant);
+  opacity: 0.3;
+  stroke-width: 1;
 }
 
 .logo-arc {
-    fill: none;
-    stroke-linecap: round;
-    transform-origin: center;
+  fill: none;
+  stroke-linecap: round;
+  transform-origin: center;
 }
 
 .logo-arc-outer {
-    stroke: var(--md-sys-color-tertiary);
-    stroke-width: 4;
-    animation: logo-spin-cw 12s linear infinite;
+  stroke: var(--md-sys-color-tertiary);
+  stroke-width: 4;
+  animation: logo-spin-cw 12s linear infinite;
 }
 
 .logo-arc-mid {
-    stroke: var(--md-sys-color-secondary);
-    stroke-width: 5;
-    animation: logo-spin-ccw 8s ease-in-out infinite;
+  stroke: var(--md-sys-color-secondary);
+  stroke-width: 5;
+  animation: logo-spin-ccw 8s ease-in-out infinite;
 }
 
 .logo-arc-inner {
-    stroke: var(--md-sys-color-primary);
-    stroke-width: 6;
-    animation: logo-spin-cw 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  stroke: var(--md-sys-color-primary);
+  stroke-width: 6;
+  animation: logo-spin-cw 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 .logo-core {
-    fill: var(--md-sys-color-primary);
-    transform-origin: center;
-    animation: logo-pulse-fast 2s ease-in-out infinite;
-    filter: drop-shadow(0 0 6px var(--md-sys-color-primary-container));
+  fill: var(--md-sys-color-primary);
+  transform-origin: center;
+  animation: logo-pulse-fast 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px var(--md-sys-color-primary-container));
 }
 md-icon svg {
   fill: currentColor;
@@ -175,21 +198,21 @@ md-icon svg {
 }
 
 .dev-logo .logo-base-track {
-    stroke-width: 8px;
-    opacity: 0.1;
+  stroke-width: 8px;
+  opacity: 0.1;
 }
 
 .dev-logo .logo-arc {
-    stroke-width: 8px;
+  stroke-width: 8px;
 }
 
 .dev-logo .logo-arc-error {
-    stroke: var(--md-sys-color-error);
-    stroke-dasharray: 10 14;
+  stroke: var(--md-sys-color-error);
+  stroke-dasharray: 10 14;
 }
 
 .dev-logo .logo-arc-inner {
-    stroke: var(--md-sys-color-outline);
+  stroke: var(--md-sys-color-outline);
 }
 
 /* Donate Dialog Styles */
@@ -254,13 +277,13 @@ md-icon svg {
   max-height: 70vh;
   object-fit: contain;
   border-radius: 16px;
-  box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
   background-color: white;
   padding: 8px;
 }
 
 @media (max-width: 400px) {
   .donate-grid {
-     grid-template-columns: 1fr;
+    grid-template-columns: 1fr;
   }
 }

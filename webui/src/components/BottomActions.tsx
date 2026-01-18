@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { ParentProps } from 'solid-js';
+import { ParentProps } from "solid-js";
 
 export default function BottomActions(props: ParentProps) {
   return (

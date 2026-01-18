@@ -1,6 +1,3 @@
-// Copyright 2025 Meta-Hybrid Mount Authors
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 use std::{
     fs,
     path::PathBuf,
@@ -20,7 +17,6 @@ pub struct RuntimeState {
     pub mount_point: PathBuf,
     pub overlay_modules: Vec<String>,
     pub magic_modules: Vec<String>,
-    pub nuke_active: bool,
     #[serde(default)]
     pub active_mounts: Vec<String>,
     #[serde(default)]
@@ -40,7 +36,6 @@ impl RuntimeState {
         mount_point: PathBuf,
         overlay_modules: Vec<String>,
         magic_modules: Vec<String>,
-        nuke_active: bool,
         active_mounts: Vec<String>,
         storage_info: (u64, u64, u8),
     ) -> Self {
@@ -62,7 +57,6 @@ impl RuntimeState {
             mount_point,
             overlay_modules,
             magic_modules,
-            nuke_active,
             active_mounts,
             storage_total: storage_info.0,
             storage_used: storage_info.1,

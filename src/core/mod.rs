@@ -146,28 +146,8 @@ impl OryzaEngine<Planned> {
 
 impl OryzaEngine<Executed> {
     pub fn finalize(self) -> Result<()> {
-        let mut nuke_active = false;
-
-        if self.state.handle.mode == "ext4" && self.config.enable_nuke {
-            log::info!(">> Engaging Paw Pad Protocol (Stealth)...");
-
-            match try_umount::ksu_nuke_sysfs(
-                self.state.handle.mount_point.to_string_lossy().as_ref(),
-            ) {
-                Ok(_) => {
-                    log::info!(">> Success: Paw Pad active. Sysfs traces purged.");
-
-                    nuke_active = true;
-                }
-                Err(e) => {
-                    log::warn!("!! Paw Pad failure: {:#}", e);
-                }
-            }
-        }
-
         modules::update_description(
             &self.state.handle.mode,
-            nuke_active,
             self.state.result.overlay_module_ids.len(),
             self.state.result.magic_module_ids.len(),
         );
@@ -187,7 +167,6 @@ impl OryzaEngine<Executed> {
             self.state.handle.mount_point,
             self.state.result.overlay_module_ids,
             self.state.result.magic_module_ids,
-            nuke_active,
             active_mounts,
             storage_stats,
         );

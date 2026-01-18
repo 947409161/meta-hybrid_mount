@@ -14,7 +14,7 @@ use std::path::Path;
 
 use anyhow::Result;
 
-use crate::{conf::config::Config, try_umount};
+use crate::conf::config::Config;
 
 pub struct Init;
 

@@ -57,16 +57,3 @@ pub fn commit() -> Result<()> {
 
     Ok(())
 }
-
-pub fn ksu_nuke_sysfs(target: &str) -> Result<()> {
-    if !crate::utils::KSU.load(std::sync::atomic::Ordering::Relaxed) {
-        return Ok(());
-    }
-    NukeExt4Sysfs::new().add(target).execute()?;
-    Ok(())
-}
-
-#[cfg(not(any(target_os = "linux", target_os = "android")))]
-pub fn ksu_nuke_sysfs(_target: &str) -> Result<()> {
-    bail!("Not supported on this OS")
-}

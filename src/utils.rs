@@ -251,19 +251,12 @@ pub fn camouflage_process(name: &str) -> Result<()> {
 }
 
 pub fn random_kworker_name() -> String {
-    use std::{
-        collections::hash_map::DefaultHasher,
-        hash::{Hash, Hasher},
-    };
-
-    let mut hasher = DefaultHasher::new();
-    SystemTime::now()
+    let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
-        .hash(&mut hasher);
-    let hash = hasher.finish();
-    let x = hash % 16;
-    let y = (hash >> 4) % 10;
+        .subsec_nanos();
+    let x = nanos % 16;
+    let y = (nanos >> 4) % 10;
     format!("kworker/u{}:{}", x, y)
 }
 
@@ -281,62 +274,18 @@ pub fn is_xattr_supported(path: &Path) -> bool {
 }
 
 pub fn is_overlay_xattr_supported(path: &Path) -> bool {
-    let test_file = path.join(".overlay_xattr_test");
-    if let Err(e) = write(&test_file, b"test") {
-        log::debug!("XATTR Check: Failed to create test file: {}", e);
-        return false;
-    }
-
-    let c_path = match CString::new(test_file.as_os_str().as_encoded_bytes()) {
-        Ok(c) => c,
-        Err(_) => {
-            let _ = remove_file(&test_file);
-            return false;
-        }
-    };
-
-    let c_key = CString::new(OVERLAY_TEST_XATTR).unwrap();
-    let c_val = CString::new("y").unwrap();
-
-    let supported = unsafe {
-        let ret = libc::lsetxattr(
-            c_path.as_ptr(),
-            c_key.as_ptr(),
-            c_val.as_ptr() as *const libc::c_void,
-            c_val.as_bytes().len(),
-            0,
-        );
-        if ret != 0 {
-            let err = std::io::Error::last_os_error();
-            log::debug!("XATTR Check: trusted.* xattr not supported: {}", err);
-            false
-        } else {
-            let mut buf = [0u8; 16];
-            let get_ret = libc::lgetxattr(
-                c_path.as_ptr(),
-                c_key.as_ptr(),
-                buf.as_mut_ptr() as *mut libc::c_void,
-                buf.len(),
-            );
-
-            if get_ret > 0 {
-                let data = &buf[..get_ret as usize];
-                if data == c_val.as_bytes() {
-                    true
-                } else {
-                    log::warn!("XATTR Check: verification failed (content mismatch)");
-                    false
-                }
-            } else {
-                let err = std::io::Error::last_os_error();
-                log::warn!("XATTR Check: set success but get failed: {}", err);
-                false
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    {
+        use rustix::fs::statvfs;
+        if let Ok(_) = statvfs(path) {
+            let dummy_key = "user.hybrid_check";
+            match extattr::lgetxattr(path, dummy_key) {
+                Err(e) if e.raw_os_error() == Some(libc::EOPNOTSUPP) => return false,
+                _ => return true,
             }
         }
-    };
-
-    let _ = remove_file(test_file);
-    supported
+    }
+    true
 }
 
 pub fn is_mounted<P: AsRef<Path>>(path: P) -> bool {

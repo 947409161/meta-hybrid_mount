@@ -1,6 +1,3 @@
-// Copyright 2025 Meta-Hybrid Mount Authors
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 use std::{
     ffi::CString,
     os::fd::AsFd,
@@ -17,7 +14,7 @@ use rustix::{
     },
 };
 
-use crate::{mount::overlayfs::utils::umount_dir, try_umount::send_unmountable};
+use crate::{mount::overlayfs::utils::umount_dir, try_umount::send_umountable};
 
 pub fn mount_overlayfs(
     lower_dirs: &[String],
@@ -42,10 +39,12 @@ pub fn mount_overlayfs(
         mount_source
     );
 
-    let upperdir = upperdir
+    let upperdir_s = upperdir
+        .as_ref()
         .filter(|up| up.exists())
         .map(|e| e.display().to_string());
-    let workdir = workdir
+    let workdir_s = workdir
+        .as_ref()
         .filter(|wd| wd.exists())
         .map(|e| e.display().to_string());
 
@@ -53,7 +52,7 @@ pub fn mount_overlayfs(
         let fs = fsopen("overlay", FsOpenFlags::FSOPEN_CLOEXEC)?;
         let fs = fs.as_fd();
         fsconfig_set_string(fs, "lowerdir", &lowerdir_config)?;
-        if let (Some(upperdir), Some(workdir)) = (&upperdir, &workdir) {
+        if let (Some(upperdir), Some(workdir)) = (&upperdir_s, &workdir_s) {
             fsconfig_set_string(fs, "upperdir", upperdir)?;
             fsconfig_set_string(fs, "workdir", workdir)?;
         }
@@ -71,9 +70,16 @@ pub fn mount_overlayfs(
 
     if let Err(e) = result {
         log::warn!("fsopen mount failed: {:#}, fallback to mount", e);
-        let mut data = format!("lowerdir={lowerdir_config}");
-        if let (Some(upperdir), Some(workdir)) = (upperdir, workdir) {
-            data = format!("{data},upperdir={upperdir},workdir={workdir}");
+        // Escape commas in paths
+        let safe_lower = lowerdir_config.replace(',', "\\,");
+        let mut data = format!("lowerdir={safe_lower}");
+
+        if let (Some(upperdir), Some(workdir)) = (upperdir_s, workdir_s) {
+            data = format!(
+                "{data},upperdir={},workdir={}",
+                upperdir.replace(',', "\\,"),
+                workdir.replace(',', "\\,")
+            );
         }
         mount(
             mount_source,
@@ -162,7 +168,7 @@ fn mount_overlay_child(
         log::warn!("failed: {:#}, fallback to bind mount", e);
         bind_mount(stock_root, mount_point)?;
     }
-    let _ = send_unmountable(mount_point);
+    let _ = send_umountable(mount_point);
     Ok(())
 }
 

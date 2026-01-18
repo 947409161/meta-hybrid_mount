@@ -1,6 +1,3 @@
-// Copyright 2026 Hybrid Mount Authors
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 pub mod executor;
 pub mod granary;
 pub mod inventory;
@@ -41,12 +38,12 @@ pub struct Executed {
     pub result: executor::ExecutionResult,
 }
 
-pub struct OryzaEngine<S> {
+pub struct MountController<S> {
     config: Config,
     state: S,
 }
 
-impl OryzaEngine<Init> {
+impl MountController<Init> {
     pub fn new(config: Config) -> Self {
         Self {
             config,
@@ -58,7 +55,7 @@ impl OryzaEngine<Init> {
         self,
         mnt_base: &Path,
         img_path: &Path,
-    ) -> Result<OryzaEngine<StorageReady>> {
+    ) -> Result<MountController<StorageReady>> {
         let handle = storage::setup(
             mnt_base,
             img_path,
@@ -77,15 +74,15 @@ impl OryzaEngine<Init> {
 
         log::info!(">> Storage Backend: [{}]", handle.mode.to_uppercase());
 
-        Ok(OryzaEngine {
+        Ok(MountController {
             config: self.config,
             state: StorageReady { handle },
         })
     }
 }
 
-impl OryzaEngine<StorageReady> {
-    pub fn scan_and_sync(mut self) -> Result<OryzaEngine<ModulesReady>> {
+impl MountController<StorageReady> {
+    pub fn scan_and_sync(mut self) -> Result<MountController<ModulesReady>> {
         let modules = inventory::scan(&self.config.moduledir, &self.config)?;
 
         log::info!(
@@ -97,7 +94,7 @@ impl OryzaEngine<StorageReady> {
 
         self.state.handle.commit(self.config.disable_umount)?;
 
-        Ok(OryzaEngine {
+        Ok(MountController {
             config: self.config,
             state: ModulesReady {
                 handle: self.state.handle,
@@ -107,15 +104,15 @@ impl OryzaEngine<StorageReady> {
     }
 }
 
-impl OryzaEngine<ModulesReady> {
-    pub fn generate_plan(self) -> Result<OryzaEngine<Planned>> {
+impl MountController<ModulesReady> {
+    pub fn generate_plan(self) -> Result<MountController<Planned>> {
         let plan = planner::generate(
             &self.config,
             &self.state.modules,
             &self.state.handle.mount_point,
         )?;
 
-        Ok(OryzaEngine {
+        Ok(MountController {
             config: self.config,
             state: Planned {
                 handle: self.state.handle,
@@ -126,13 +123,13 @@ impl OryzaEngine<ModulesReady> {
     }
 }
 
-impl OryzaEngine<Planned> {
-    pub fn execute(self) -> Result<OryzaEngine<Executed>> {
+impl MountController<Planned> {
+    pub fn execute(self) -> Result<MountController<Executed>> {
         log::info!(">> Link Start! Executing mount plan...");
 
         let result = executor::execute(&self.state.plan, &self.config)?;
 
-        Ok(OryzaEngine {
+        Ok(MountController {
             config: self.config,
             state: Executed {
                 handle: self.state.handle,
@@ -144,7 +141,7 @@ impl OryzaEngine<Planned> {
     }
 }
 
-impl OryzaEngine<Executed> {
+impl MountController<Executed> {
     pub fn finalize(self) -> Result<()> {
         modules::update_description(
             &self.state.handle.mode,
@@ -175,7 +172,7 @@ impl OryzaEngine<Executed> {
             log::error!("Failed to save runtime state: {:#}", e);
         }
 
-        granary::disengage_ratoon_protocol();
+        granary::reset_recovery_state();
 
         log::info!(">> System operational. Mount sequence complete.");
 

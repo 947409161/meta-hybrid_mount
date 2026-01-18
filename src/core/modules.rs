@@ -31,23 +31,24 @@ struct ModuleProp {
 impl From<&Path> for ModuleProp {
     fn from(path: &Path) -> Self {
         let mut prop = ModuleProp::default();
+        let re = regex_lite::Regex::new(r"^([a-zA-Z0-9_.]+)=(.*)$").unwrap();
 
         if let Ok(file) = fs::File::open(path) {
             for line in BufReader::new(file).lines().map_while(Result::ok) {
-                if let Some((k, v)) = line.split_once('=') {
-                    let val = v.trim().to_string();
+                if let Some(caps) = re.captures(line.trim()) {
+                    let k = caps.get(1).map_or("", |m| m.as_str());
+                    let v = caps.get(2).map_or("", |m| m.as_str());
 
-                    match k.trim() {
-                        "name" => prop.name = val,
-                        "version" => prop.version = val,
-                        "author" => prop.author = val,
-                        "description" => prop.description = val,
+                    match k {
+                        "name" => prop.name = v.to_string(),
+                        "version" => prop.version = v.to_string(),
+                        "author" => prop.author = v.to_string(),
+                        "description" => prop.description = v.to_string(),
                         _ => {}
                     }
                 }
             }
         }
-
         prop
     }
 }

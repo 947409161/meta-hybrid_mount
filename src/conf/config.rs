@@ -10,7 +10,7 @@ pub const CONFIG_FILE_DEFAULT: &str = "/data/adb/meta-hybrid/config.toml";
 use crate::defs::DEFAULT_HYBRID_MNT_DIR;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct GranaryConfig {
+pub struct BackupConfig {
     #[serde(default = "default_max_backups")]
     pub max_backups: usize,
     #[serde(default = "default_retention_days")]
@@ -25,7 +25,7 @@ fn default_retention_days() -> u64 {
     0
 }
 
-impl Default for GranaryConfig {
+impl Default for BackupConfig {
     fn default() -> Self {
         Self {
             max_backups: default_max_backups(),
@@ -66,8 +66,8 @@ pub struct Config {
     pub disable_umount: bool,
     #[serde(default)]
     pub allow_umount_coexistence: bool,
-    #[serde(default)]
-    pub granary: GranaryConfig,
+    #[serde(default, alias = "granary")]
+    pub backup: BackupConfig,
     #[serde(default = "default_hybrid_mnt_dir")]
     pub hybrid_mnt_dir: String,
     #[serde(default)]
@@ -117,7 +117,7 @@ impl Default for Config {
             overlay_mode: OverlayMode::default(),
             disable_umount: false,
             allow_umount_coexistence: false,
-            granary: GranaryConfig::default(),
+            backup: BackupConfig::default(),
             hybrid_mnt_dir: default_hybrid_mnt_dir(),
             default_mode: DefaultMode::default(),
         }

@@ -15,3 +15,6 @@ pub const BUILTIN_PARTITIONS: &[&str] =
     &["system", "vendor", "product", "system_ext", "odm", "oem"];
 pub const REPLACE_DIR_FILE_NAME: &str = ".replace";
 pub const REPLACE_DIR_XATTR: &str = "trusted.overlay.opaque";
+pub const RECOVERY_COUNTER_FILE: &str = "/data/adb/meta-hybrid/boot_counter";
+pub const RECOVERY_RESCUE_NOTICE: &str = "/data/adb/meta-hybrid/rescue_notice";
+pub const BACKUP_DIR: &str = "/data/adb/meta-hybrid/backups";

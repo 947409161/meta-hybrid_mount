@@ -3,7 +3,7 @@ name: Crowdin Action
 on:
   push:
     paths:
-      - webui/src/locales/en-US.json
+      - webui/src/locales/*
     branches:
       - dev
   workflow_dispatch:

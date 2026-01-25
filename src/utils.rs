@@ -1,6 +1,3 @@
-// Copyright 2026 Hybrid Mount Developers
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 use std::{
     ffi::CString,
     fs::{self, File, OpenOptions, create_dir_all, remove_dir_all, remove_file, write},
@@ -414,7 +411,6 @@ fn apply_system_context(current: &Path, relative: &Path) -> Result<()> {
     } else if let Some(parent) = system_path.parent()
         && parent.exists()
     {
-        // 尝试继承父目录
         if let Ok(parent_ctx) = lgetfilecon(parent)
             && parent_ctx != CONTEXT_ROOTFS
         {
@@ -585,6 +581,17 @@ pub fn mount_erofs_image(image_path: &Path, target: &Path) -> Result<()> {
 }
 
 pub fn extract_module_id(path: &Path) -> Option<String> {
+    let mut current = path;
+    loop {
+        if current.join("module.prop").exists() {
+            return current.file_name().map(|s| s.to_string_lossy().to_string());
+        }
+        match current.parent() {
+            Some(p) => current = p,
+            None => break,
+        }
+    }
+
     path.parent()
         .and_then(|p| p.file_name())
         .map(|s| s.to_string_lossy().to_string())

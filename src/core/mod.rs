@@ -1,6 +1,3 @@
-// Copyright 2026 Hybrid Mount Developers
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 pub mod executor;
 pub mod granary;
 pub mod inventory;
@@ -36,7 +33,6 @@ pub struct Planned {
 
 pub struct Executed {
     pub handle: storage::StorageHandle,
-    #[allow(dead_code)]
     pub modules: Vec<inventory::Module>,
     pub plan: planner::MountPlan,
     pub result: executor::ExecutionResult,
@@ -155,13 +151,16 @@ impl MountController<Executed> {
 
         let storage_stats = storage::get_usage(&self.state.handle.mount_point);
 
-        let active_mounts: Vec<String> = self
+        let mut active_mounts: Vec<String> = self
             .state
             .plan
             .overlay_ops
             .iter()
             .map(|op| op.partition_name.clone())
             .collect();
+
+        active_mounts.sort();
+        active_mounts.dedup();
 
         let state = state::RuntimeState::new(
             self.state.handle.mode,

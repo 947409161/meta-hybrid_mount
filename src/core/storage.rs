@@ -1,23 +1,24 @@
-// Copyright 2026 Hybrid Mount Developers
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 use std::{
     fs,
+    os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
-    process::Command,
+    process::{Command, Stdio},
 };
 
 use anyhow::{Context, Result, bail, ensure};
 use jwalk::WalkDir;
-use rustix::{
-    fs::Mode,
-    mount::{MountPropagationFlags, UnmountFlags, mount_change, unmount as umount},
-};
+use rustix::mount::{MountPropagationFlags, UnmountFlags, mount_change, unmount as umount};
 use serde::Serialize;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
-use crate::try_umount::send_umountable;
-use crate::{core::state::RuntimeState, mount::overlayfs::utils as overlay_utils, utils};
+use crate::mount::umount_mgr::send_umountable;
+use crate::{
+    core::state::RuntimeState,
+    defs,
+    mount::overlayfs::utils as overlay_utils,
+    sys::mount::is_mounted,
+    utils::{self, ensure_dir_exists, lsetfilecon},
+};
 
 const DEFAULT_SELINUX_CONTEXT: &str = "u:object_r:system_file:s0";
 
@@ -25,6 +26,7 @@ pub struct StorageHandle {
     pub mount_point: PathBuf,
     pub mode: String,
     pub backing_image: Option<PathBuf>,
+    pub final_target: Option<PathBuf>,
 }
 
 impl StorageHandle {
@@ -35,25 +37,39 @@ impl StorageHandle {
                 .as_ref()
                 .context("EROFS backing image path missing")?;
 
-            utils::create_erofs_image(&self.mount_point, image_path)
+            let final_target = self
+                .final_target
+                .as_ref()
+                .context("EROFS final target missing")?;
+
+            create_erofs_image(&self.mount_point, image_path)
                 .context("Failed to pack EROFS image")?;
 
-            umount(&self.mount_point, UnmountFlags::DETACH)
-                .context("Failed to unmount staging tmpfs")?;
+            if let Err(e) = umount(&self.mount_point, UnmountFlags::DETACH) {
+                log::warn!("Failed to unmount staging tmpfs: {}", e);
+            }
 
-            utils::mount_erofs_image(image_path, &self.mount_point)
+            if let Err(e) = fs::remove_dir(&self.mount_point) {
+                log::debug!("Failed to remove staging dir: {}", e);
+            }
+
+            ensure_dir_exists(final_target)?;
+
+            mount_erofs_image(image_path, final_target)
                 .context("Failed to mount finalized EROFS image")?;
 
-            if let Err(e) = mount_change(&self.mount_point, MountPropagationFlags::PRIVATE) {
+            if let Err(e) = mount_change(final_target, MountPropagationFlags::PRIVATE) {
                 log::warn!("Failed to make EROFS storage private: {}", e);
             }
 
             #[cfg(any(target_os = "linux", target_os = "android"))]
             if !disable_umount {
-                let _ = send_umountable(&self.mount_point);
+                let _ = send_umountable(final_target);
             }
 
+            self.mount_point = final_target.clone();
             self.mode = "erofs".to_string();
+            self.final_target = None;
         }
 
         Ok(())
@@ -128,7 +144,7 @@ pub fn setup(
     mount_source: &str,
     disable_umount: bool,
 ) -> Result<StorageHandle> {
-    if utils::is_mounted(mnt_base) {
+    if is_mounted(mnt_base) {
         let _ = umount(mnt_base, UnmountFlags::DETACH);
     }
 
@@ -148,19 +164,28 @@ pub fn setup(
         }
     };
 
-    if use_erofs && utils::is_erofs_supported() {
+    if use_erofs && is_erofs_supported() {
         let erofs_path = img_path.with_extension("erofs");
+        let staging_dir = Path::new(defs::RUN_DIR).join("erofs_staging");
 
-        utils::mount_tmpfs(mnt_base, mount_source)?;
+        if is_mounted(&staging_dir) {
+            let _ = umount(&staging_dir, UnmountFlags::DETACH);
+        }
+        if staging_dir.exists() {
+            let _ = fs::remove_dir_all(&staging_dir);
+        }
+        ensure_dir_exists(&staging_dir)?;
 
-        make_private(mnt_base);
+        crate::sys::mount::mount_tmpfs(&staging_dir, mount_source)?;
 
-        try_hide(mnt_base);
+        make_private(&staging_dir);
+        try_hide(&staging_dir);
 
         return Ok(StorageHandle {
-            mount_point: mnt_base.to_path_buf(),
+            mount_point: staging_dir,
             mode: "erofs_staging".to_string(),
             backing_image: Some(erofs_path),
+            final_target: Some(mnt_base.to_path_buf()),
         });
     }
 
@@ -179,6 +204,7 @@ pub fn setup(
             mount_point: mnt_base.to_path_buf(),
             mode: "tmpfs".to_string(),
             backing_image: None,
+            final_target: None,
         });
     }
 
@@ -192,14 +218,11 @@ pub fn setup(
 }
 
 fn try_setup_tmpfs(target: &Path, mount_source: &str) -> Result<bool> {
-    if utils::mount_tmpfs(target, mount_source).is_ok() {
-        if utils::is_overlay_xattr_supported(target) {
+    if crate::sys::mount::mount_tmpfs(target, mount_source).is_ok() {
+        if utils::is_overlay_xattr_supported().unwrap_or(false) {
             log::info!("Tmpfs mounted and supports xattrs (CONFIG_TMPFS_XATTR=y).");
             return Ok(true);
         } else {
-            log::warn!("Tmpfs mounted but XATTRs (trusted.*) are NOT supported.");
-            log::warn!(">> Your kernel likely lacks CONFIG_TMPFS_XATTR=y.");
-            log::warn!(">> Falling back to legacy Ext4 image mode.");
             let _ = umount(target, UnmountFlags::DETACH);
         }
     }
@@ -208,55 +231,41 @@ fn try_setup_tmpfs(target: &Path, mount_source: &str) -> Result<bool> {
 }
 
 fn setup_ext4_image(target: &Path, img_path: &Path, moduledir: &Path) -> Result<StorageHandle> {
-    if !img_path.exists() || check_image(img_path).is_err() {
-        log::info!("Modules image missing or corrupted. Fallback to creation.");
-
-        if img_path.exists()
-            && let Err(e) = fs::remove_file(img_path)
-        {
-            log::warn!("Failed to remove old image: {}", e);
-        }
-
-        log::info!("- Preparing image");
-
-        let total_size = calculate_total_size(moduledir)?;
-        log::info!(
-            "Total size of files in '{}': {} bytes",
-            moduledir.display(),
-            total_size,
-        );
-
-        let grow_size = 128 * 1024 * 1024 + total_size;
-
-        fs::File::create(img_path)
-            .context("Failed to create ext4 image file")?
-            .set_len(grow_size)
-            .context("Failed to extend ext4 image")?;
-
-        let result = Command::new("mkfs.ext4")
-            .arg("-b")
-            .arg("1024")
-            .arg(img_path)
-            .stdout(std::process::Stdio::piped())
-            .output()?;
-
-        ensure!(
-            result.status.success(),
-            "Failed to format ext4 image: {}",
-            String::from_utf8(result.stderr)?
-        );
-
-        log::info!("Checking Image");
-        check_image(img_path)?;
+    if img_path.exists()
+        && let Err(e) = fs::remove_file(img_path)
+    {
+        log::warn!("Failed to remove old image: {}", e);
     }
+
+    let total_size = calculate_total_size(moduledir)?;
+    let min_size = 64 * 1024 * 1024;
+    let grow_size = std::cmp::max((total_size as f64 * 1.2) as u64, min_size);
+
+    fs::File::create(img_path)
+        .context("Failed to create ext4 image file")?
+        .set_len(grow_size)
+        .context("Failed to extend ext4 image")?;
+
+    let result = Command::new("mkfs.ext4")
+        .arg("-b")
+        .arg("1024")
+        .arg(img_path)
+        .stdout(std::process::Stdio::piped())
+        .output()?;
+
+    ensure!(
+        result.status.success(),
+        "Failed to format ext4 image: {}",
+        String::from_utf8(result.stderr)?
+    );
+
+    check_image(img_path)?;
 
     utils::lsetfilecon(img_path, "u:object_r:ksu_file:s0").ok();
 
-    log::info!("- Mounting image");
-
-    utils::ensure_dir_exists(target)?;
+    ensure_dir_exists(target)?;
     if overlay_utils::AutoMountExt4::try_new(img_path, target, false).is_err() {
-        if utils::repair_image(img_path).is_ok() {
+        if crate::sys::mount::repair_image(img_path).is_ok() {
             overlay_utils::AutoMountExt4::try_new(img_path, target, false)
                 .context("Failed to mount modules.img after repair")
                 .map(|_| ())?;
@@ -264,8 +273,6 @@ fn setup_ext4_image(target: &Path, img_path: &Path, moduledir: &Path) -> Result<
             bail!("Failed to repair modules.img");
         }
     }
-
-    log::info!("mounted {} to {}", img_path.display(), target.display());
 
     for dir_entry in WalkDir::new(target).parallelism(jwalk::Parallelism::Serial) {
         if let Some(path) = dir_entry.ok().map(|dir_entry| dir_entry.path()) {
@@ -277,33 +284,15 @@ fn setup_ext4_image(target: &Path, img_path: &Path, moduledir: &Path) -> Result<
         mount_point: target.to_path_buf(),
         mode: "ext4".to_string(),
         backing_image: Some(img_path.to_path_buf()),
+        final_target: None,
     })
-}
-
-#[allow(dead_code)]
-pub fn finalize_storage_permissions(target: &Path) {
-    if let Err(e) = rustix::fs::chmod(target, Mode::from(0o755)) {
-        log::warn!("Failed to chmod storage root: {}", e);
-    }
-
-    if let Err(e) = rustix::fs::chown(
-        target,
-        Some(rustix::fs::Uid::from_raw(0)),
-        Some(rustix::fs::Gid::from_raw(0)),
-    ) {
-        log::warn!("Failed to chown storage root: {}", e);
-    }
-
-    if let Err(e) = utils::lsetfilecon(target, DEFAULT_SELINUX_CONTEXT) {
-        log::warn!("Failed to set SELinux context: {}", e);
-    }
 }
 
 pub fn print_status() -> Result<()> {
     let state = RuntimeState::load().ok();
     let fallback_mnt = crate::conf::config::Config::load_default()
         .map(|c| c.hybrid_mnt_dir)
-        .unwrap_or_else(|_| crate::defs::DEFAULT_HYBRID_MNT_DIR.to_string());
+        .unwrap_or_else(|_| defs::DEFAULT_HYBRID_MNT_DIR.to_string());
     let (mnt_base, expected_mode) = if let Some(ref s) = state {
         (s.mount_point.clone(), s.storage_mode.clone())
     } else {
@@ -318,7 +307,7 @@ pub fn print_status() -> Result<()> {
 
     let mut percent = 0;
 
-    if utils::is_mounted(&mnt_base)
+    if is_mounted(&mnt_base)
         && let Ok(stat) = rustix::fs::statvfs(&mnt_base)
     {
         mode = if expected_mode != "unknown" {
@@ -337,9 +326,9 @@ pub fn print_status() -> Result<()> {
     }
 
     let mut supported_modes = vec!["ext4".to_string(), "erofs".to_string()];
-    let check_dir = Path::new("/data/local/tmp/.mh_xattr_chk");
-    if utils::mount_tmpfs(check_dir, "mh_check").is_ok() {
-        if utils::is_overlay_xattr_supported(check_dir) {
+    let check_dir = Path::new(defs::XATTR_CHECK_DIR);
+    if crate::sys::mount::mount_tmpfs(check_dir, "mh_check").is_ok() {
+        if utils::is_overlay_xattr_supported().unwrap_or(false) {
             supported_modes.insert(0, "tmpfs".to_string());
         }
         let _ = umount(check_dir, UnmountFlags::DETACH);
@@ -356,6 +345,66 @@ pub fn print_status() -> Result<()> {
     };
 
     println!("{}", serde_json::to_string(&status)?);
+
+    Ok(())
+}
+
+fn is_erofs_supported() -> bool {
+    fs::read_to_string("/proc/filesystems")
+        .map(|content| content.contains("erofs"))
+        .unwrap_or(false)
+}
+
+fn create_erofs_image(src_dir: &Path, image_path: &Path) -> Result<()> {
+    let mkfs_bin = Path::new(defs::MKFS_EROFS_PATH);
+    let cmd_name = if mkfs_bin.exists() {
+        mkfs_bin.as_os_str()
+    } else {
+        std::ffi::OsStr::new("mkfs.erofs")
+    };
+
+    if image_path.exists() {
+        let _ = fs::remove_file(image_path);
+    }
+
+    let output = Command::new(cmd_name)
+        .arg("-z")
+        .arg("lz4hc")
+        .arg("-x")
+        .arg("256")
+        .arg(image_path)
+        .arg(src_dir)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .context("Failed to execute mkfs.erofs")?;
+
+    if !output.status.success() {
+        bail!("Failed to create EROFS image");
+    }
+
+    let _ = fs::set_permissions(image_path, fs::Permissions::from_mode(0o644));
+    lsetfilecon(image_path, "u:object_r:ksu_file:s0")?;
+    Ok(())
+}
+
+fn mount_erofs_image(image_path: &Path, target: &Path) -> Result<()> {
+    ensure_dir_exists(target)?;
+    lsetfilecon(image_path, "u:object_r:ksu_file:s0").ok();
+    let status = Command::new("mount")
+        .args(["-t", "erofs", "-o", "loop,ro,nodev,noatime"])
+        .arg(image_path)
+        .arg(target)
+        .status()
+        .context("Failed to execute mount command for EROFS")?;
+
+    if !status.success() {
+        bail!("EROFS Mount command failed");
+    }
+
+    if fs::read_dir(target)?.next().is_none() {
+        bail!("EROFS mount success but directory is empty (Loop device failure?)");
+    }
 
     Ok(())
 }

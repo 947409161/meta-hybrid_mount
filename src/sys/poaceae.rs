@@ -17,6 +17,8 @@ pub struct IoctlSpoofArgs {
     pub mtime: u64,
 }
 
+const _: () = assert!(std::mem::size_of::<IoctlSpoofArgs>() == 256 + 4 + 4 + 2 + 8 + 6);
+
 ioctl_write_ptr!(add_hide, MAGIC, 1, [u8; 256]);
 ioctl_write_ptr!(del_hide, MAGIC, 2, [u8; 256]);
 ioctl_write_ptr!(add_redirect, MAGIC, 4, [u8; 512]);

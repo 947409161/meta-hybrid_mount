@@ -1,6 +1,3 @@
-// Copyright 2026 Hybrid Mount Developers
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 use std::{
     collections::HashSet,
     path::{Path, PathBuf},
@@ -10,9 +7,9 @@ use anyhow::Result;
 
 use crate::{
     conf::config,
-    core::planner::MountPlan,
+    core::ops::planner::MountPlan,
     defs,
-    mount::{magic_mount, overlayfs},
+    mount::{magic_mount, overlayfs, umount_mgr},
     utils,
 };
 
@@ -71,7 +68,7 @@ pub fn execute(plan: &MountPlan, config: &config::Config) -> Result<ExecutionRes
 
                 #[cfg(any(target_os = "linux", target_os = "android"))]
                 if !config.disable_umount
-                    && let Err(e) = crate::try_umount::send_umountable(&op.target)
+                    && let Err(e) = umount_mgr::send_umountable(&op.target)
                 {
                     log::warn!("Failed to schedule unmount for {}: {}", op.target, e);
                 }
@@ -96,14 +93,24 @@ pub fn execute(plan: &MountPlan, config: &config::Config) -> Result<ExecutionRes
 
     if !magic_queue.is_empty() {
         let tempdir = PathBuf::from(&config.hybrid_mnt_dir).join("magic_workspace");
-        let _ = crate::try_umount::TMPFS.set(tempdir.to_string_lossy().to_string());
+        let _ = umount_mgr::TMPFS.set(tempdir.to_string_lossy().to_string());
 
         log::info!(
             ">> Phase 2: Magic Mount (Fallback/Native) using {}",
             tempdir.display()
         );
 
-        if !tempdir.exists() {
+        if matches!(config.overlay_mode, config::OverlayMode::Erofs) {
+            if tempdir.exists() {
+                crate::sys::mount::mount_tmpfs(&tempdir, "magic_ws")?;
+                #[cfg(any(target_os = "linux", target_os = "android"))]
+                if let Err(e) = umount_mgr::send_umountable(&tempdir) {
+                    log::warn!("Failed to schedule unmount for magic_ws: {}", e);
+                }
+            } else {
+                log::error!("Magic Mount anchor missing in EROFS image!");
+            }
+        } else if !tempdir.exists() {
             std::fs::create_dir_all(&tempdir)?;
         }
 
@@ -125,7 +132,7 @@ pub fn execute(plan: &MountPlan, config: &config::Config) -> Result<ExecutionRes
 
     #[cfg(any(target_os = "linux", target_os = "android"))]
     if !config.disable_umount
-        && let Err(e) = crate::try_umount::commit()
+        && let Err(e) = umount_mgr::commit()
     {
         log::warn!("Final try_umount commit failed: {}", e);
     }

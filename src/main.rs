@@ -1,15 +1,11 @@
-// Copyright 2026 Hybrid Mount Developers
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 mod conf;
 mod core;
 mod defs;
 mod mount;
-#[cfg(any(target_os = "linux", target_os = "android"))]
-mod try_umount;
+mod sys;
 mod utils;
 
-use core::{MountController, granary};
+use core::{MountController, ops::backup as granary};
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
@@ -62,14 +58,17 @@ fn load_final_config(cli: &Cli) -> Result<Config> {
 }
 
 fn main() -> Result<()> {
+    // [Change] Create RUN_DIR immediately as it now hosts critical state files (boot_counter)
+    utils::ensure_dir_exists(defs::RUN_DIR)
+        .with_context(|| format!("Failed to create run directory: {}", defs::RUN_DIR))?;
+
     let threads = std::thread::available_parallelism()
         .map(|n| n.get())
         .unwrap_or(4);
 
-    rayon::ThreadPoolBuilder::new()
+    let _ = rayon::ThreadPoolBuilder::new()
         .num_threads(threads)
-        .build_global()
-        .unwrap();
+        .build_global();
 
     let cli = Cli::parse();
 
@@ -147,9 +146,6 @@ fn main() -> Result<()> {
     if config.disable_umount {
         log::warn!("!! Umount is DISABLED via config.");
     }
-
-    utils::ensure_dir_exists(defs::RUN_DIR)
-        .with_context(|| format!("Failed to create run directory: {}", defs::RUN_DIR))?;
 
     let mnt_base = PathBuf::from(&config.hybrid_mnt_dir);
     let img_path = PathBuf::from(defs::MODULES_IMG_FILE);

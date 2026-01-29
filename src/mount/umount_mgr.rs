@@ -1,6 +1,3 @@
-// Copyright 2026 Hybrid Mount Developers
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 use std::{
     collections::HashSet,
     path::Path,
@@ -47,16 +44,18 @@ pub fn commit() -> Result<()> {
         .lock()
         .map_err(|_| anyhow::anyhow!("Failed to lock umount list"))?;
 
-    // Attempt 1: Normal umount (0)
     list.flags(0);
     if let Err(e0) = list.umount() {
         log::debug!("try_umount(0) failed: {:#}, retrying with flags(2)", e0);
 
-        // Attempt 2: Detach/Lazy umount (2)
         list.flags(2);
         if let Err(e2) = list.umount() {
             log::warn!("try_umount(2) failed: {:#}", e2);
         }
+    }
+
+    if let Ok(mut history) = HISTORY.lock() {
+        history.clear();
     }
 
     Ok(())

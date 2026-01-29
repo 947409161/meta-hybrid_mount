@@ -1,6 +1,3 @@
-// Copyright 2025 Meta-Hybrid Mount Authors
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 use std::{collections::HashSet, fs, path::Path};
 
 use anyhow::Result;
@@ -16,6 +13,7 @@ pub fn perform_sync(modules: &[Module], target_base: &Path) -> Result<()> {
 
     modules.par_iter().for_each(|module| {
         let dst = target_base.join(&module.id);
+        let dst_backup = target_base.join(format!(".backup_{}", module.id));
 
         let has_content = defs::BUILTIN_PARTITIONS.iter().any(|p| {
             let part_path = module.source_path.join(p);
@@ -50,19 +48,27 @@ pub fn perform_sync(modules: &[Module], target_base: &Path) -> Result<()> {
                 );
             }
 
-            if dst.exists()
-                && let Err(e) = fs::remove_dir_all(&dst)
-            {
-                log::warn!(
-                    "Failed to clean existing target dir for {}: {}",
-                    module.id,
-                    e
-                );
+            let mut backup_created = false;
+            if dst.exists() {
+                if let Err(e) = fs::rename(&dst, &dst_backup) {
+                    log::error!("Failed to backup existing module {}: {}", module.id, e);
+                    let _ = fs::remove_dir_all(&tmp_dst);
+                    return;
+                }
+                backup_created = true;
             }
 
             if let Err(e) = fs::rename(&tmp_dst, &dst) {
                 log::error!("Failed to commit atomic sync for {}: {}", module.id, e);
+                if backup_created {
+                    let _ = fs::rename(&dst_backup, &dst);
+                }
                 let _ = fs::remove_dir_all(&tmp_dst);
+                return;
+            }
+
+            if backup_created && let Err(e) = fs::remove_dir_all(&dst_backup) {
+                log::warn!("Failed to clean up backup for {}: {}", module.id, e);
             }
         } else {
             log::debug!("Skipping module: {}", module.id);
@@ -101,7 +107,11 @@ fn prune_orphaned_modules(modules: &[Module], target_base: &Path) -> Result<()> 
 
         let name = name_os.to_string_lossy();
 
-        if name != "lost+found" && name != "meta-hybrid" && !active_ids.contains(name.as_ref()) {
+        if name != "lost+found"
+            && name != "meta-hybrid"
+            && !name.starts_with('.')
+            && !active_ids.contains(name.as_ref())
+        {
             log::info!("Pruning orphaned module storage: {}", name);
 
             if path.is_dir() {

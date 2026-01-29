@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
-use super::config::CONFIG_FILE_DEFAULT;
+use crate::defs;
 
 #[derive(Parser, Debug)]
 #[command(name = "meta-hybrid", version, about = "Hybrid Mount Metamodule")]
@@ -27,7 +27,7 @@ pub struct Cli {
 #[derive(Subcommand, Debug)]
 pub enum Commands {
     GenConfig {
-        #[arg(short = 'o', long = "output", default_value = CONFIG_FILE_DEFAULT)]
+        #[arg(short = 'o', long = "output", default_value = defs::CONFIG_FILE)]
         output: PathBuf,
     },
     ShowConfig,
@@ -55,7 +55,7 @@ pub enum Commands {
         value: Option<String>,
     },
     Poaceae {
-        #[arg(short, long, default_value = "/data/adb/poaceaefs_mount")]
+        #[arg(short, long, default_value = defs::POACEAE_MOUNT_POINT)]
         target: String,
 
         #[command(subcommand)]

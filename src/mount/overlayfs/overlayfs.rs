@@ -1,6 +1,3 @@
-// Copyright 2026 Hybrid Mount Developers
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 use std::{
     ffi::CString,
     os::fd::AsFd,
@@ -17,7 +14,10 @@ use rustix::{
     },
 };
 
-use crate::{mount::overlayfs::utils::umount_dir, try_umount::send_umountable};
+use crate::mount::{overlayfs::utils::umount_dir, umount_mgr::send_umountable};
+
+const MAX_LOWERDIR_COUNT: usize = 128;
+const MAX_ARG_LENGTH: usize = 3000;
 
 pub fn mount_overlayfs(
     lower_dirs: &[String],
@@ -27,16 +27,38 @@ pub fn mount_overlayfs(
     dest: impl AsRef<Path>,
     mount_source: &str,
 ) -> Result<()> {
-    let lowerdir_config = lower_dirs
+    let mut valid_lower_dirs: Vec<&str> = lower_dirs
         .iter()
-        .map(|s| s.as_ref())
+        .map(|s| s.as_str())
         .chain(std::iter::once(lowest))
-        .collect::<Vec<_>>()
-        .join(":");
+        .collect();
+
+    if valid_lower_dirs.len() > MAX_LOWERDIR_COUNT {
+        log::warn!(
+            "Too many overlay layers ({} > {}). Truncating to prevent failure. Some modules may not load.",
+            valid_lower_dirs.len(),
+            MAX_LOWERDIR_COUNT
+        );
+        valid_lower_dirs.truncate(MAX_LOWERDIR_COUNT);
+    }
+
+    let mut lowerdir_config = valid_lower_dirs.join(":");
+
+    if lowerdir_config.len() > MAX_ARG_LENGTH {
+        log::warn!(
+            "OverlayFS lowerdir argument too long ({} bytes). Truncating...",
+            lowerdir_config.len()
+        );
+        while lowerdir_config.len() > MAX_ARG_LENGTH && valid_lower_dirs.len() > 1 {
+            valid_lower_dirs.pop();
+            lowerdir_config = valid_lower_dirs.join(":");
+        }
+    }
+
     log::info!(
-        "mount overlayfs on {:?}, lowerdir={}, upperdir={:?}, workdir={:?}, source={}",
+        "mount overlayfs on {:?}, layers={}, upperdir={:?}, workdir={:?}, source={}",
         dest.as_ref(),
-        lowerdir_config,
+        valid_lower_dirs.len(),
         upperdir,
         workdir,
         mount_source
@@ -73,7 +95,6 @@ pub fn mount_overlayfs(
 
     if let Err(e) = result {
         log::warn!("fsopen mount failed: {:#}, fallback to mount", e);
-        // Escape commas in paths
         let safe_lower = lowerdir_config.replace(',', "\\,");
         let mut data = format!("lowerdir={safe_lower}");
 

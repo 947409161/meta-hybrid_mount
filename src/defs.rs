@@ -1,6 +1,3 @@
-// Copyright 2025 Meta-Hybrid Mount Authors
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 pub const DEFAULT_HYBRID_MNT_DIR: &str = "/debug_ramdisk";
 pub const MODULES_IMG_FILE: &str = "/data/adb/meta-hybrid/modules.img";
 pub const RUN_DIR: &str = "/data/adb/meta-hybrid/run/";
@@ -11,6 +8,14 @@ pub const SKIP_MOUNT_FILE_NAME: &str = "skip_mount";
 pub const SYSTEM_RW_DIR: &str = "/data/adb/meta-hybrid/rw";
 pub const MODULE_PROP_FILE: &str = "/data/adb/modules/meta-hybrid/module.prop";
 pub const MODULES_DIR: &str = "/data/adb/modules";
+pub const CONFIG_FILE: &str = "/data/adb/meta-hybrid/config.toml";
+pub const BACKUPS_DIR: &str = "/data/adb/meta-hybrid/backups";
+pub const BOOT_COUNTER_FILE: &str = "/data/adb/meta-hybrid/run/boot_counter";
+pub const RESCUE_NOTICE_FILE: &str = "/data/adb/meta-hybrid/run/rescue_notice";
+pub const MKFS_EROFS_PATH: &str = "/data/adb/metamodule/tools/mkfs.erofs";
+pub const XATTR_CHECK_DIR: &str = "/data/local/tmp/.mh_xattr_chk";
+pub const POACEAE_MOUNT_POINT: &str = "/data/adb/poaceaefs_mount";
+pub const ZYGISKSU_DENYLIST_FILE: &str = "/data/adb/zygisksu/denylist_enforce";
 
 pub const BUILTIN_PARTITIONS: &[&str] = &[
     "system",

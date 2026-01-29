@@ -1,6 +1,3 @@
-// Copyright 2025 Meta-Hybrid Mount Authors
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     fs,
@@ -87,7 +84,6 @@ impl MountPlan {
                     let module_id =
                         utils::extract_module_id(layer_path).unwrap_or_else(|| "UNKNOWN".into());
 
-                    // Check strictly for dead symlinks or other issues
                     for entry in WalkDir::new(layer_path).min_depth(1).into_iter().flatten() {
                         if entry.path_is_symlink() {
                             if let Ok(target) = std::fs::read_link(entry.path()) {
@@ -193,7 +189,6 @@ pub fn generate(
                 let mode = module.rules.get_mode(&dir_name);
                 if matches!(mode, MountMode::Magic) {
                     magic_ids.insert(module.id.clone());
-                    // Magic mount logic would go here separately or fallback
                     continue;
                 }
                 if matches!(mode, MountMode::Ignore) {
@@ -249,28 +244,25 @@ pub fn generate(
                         .unwrap_or_default();
 
                     let should_split = sensitive_partitions.contains(target_name.as_ref())
-                        || target_name == "system"; // 总是尝试拆解 /system 以发现内部的软链接
+                        || target_name == "system";
 
                     if should_split {
-                        // 遍历模块内的该目录，将子项加入队列
                         if let Ok(sub_entries) = fs::read_dir(&module_source) {
                             for sub_entry in sub_entries.flatten() {
                                 let sub_path = sub_entry.path();
                                 if !sub_path.is_dir() {
-                                    // OverlayFS 无法在根目录挂载文件，忽略文件
                                     continue;
                                 }
                                 let sub_name = sub_entry.file_name();
 
                                 queue.push_back(ProcessingItem {
                                     module_source: sub_path,
-                                    system_target: canonical_target.join(sub_name), // 下钻一层
+                                    system_target: canonical_target.join(sub_name),
                                     partition_label: partition_label.clone(),
                                 });
                             }
                         }
                     } else {
-                        // 不需要拆解，直接作为挂载点
                         overlay_groups
                             .entry(canonical_target)
                             .or_default()
@@ -284,7 +276,6 @@ pub fn generate(
     for (target_path, layers) in overlay_groups {
         let target_str = target_path.to_string_lossy().to_string();
 
-        // 最终安全检查：不要挂载在非目录上
         if !target_path.is_dir() {
             continue;
         }

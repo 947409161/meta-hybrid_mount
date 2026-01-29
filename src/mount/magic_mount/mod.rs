@@ -1,6 +1,3 @@
-// Copyright 2026 Hybrid Mount Authors
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 mod utils;
 
 use std::{
@@ -17,13 +14,12 @@ use rustix::mount::{
 };
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
-use crate::try_umount::send_umountable;
+use crate::mount::umount_mgr::{self, send_umountable};
 use crate::{
     mount::{
         magic_mount::utils::{clone_symlink, collect_module_files, mount_mirror},
         node::{Node, NodeFileType},
     },
-    try_umount,
     utils::ensure_dir_exists,
 };
 
@@ -342,7 +338,7 @@ where
             log::error!("failed to unmount tmp {e}");
         }
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        try_umount::commit()?;
+        umount_mgr::commit()?;
         fs::remove_dir(tmp_dir).ok();
 
         let mounted_symbols = MOUNTED_SYMBOLS_FILES.load(std::sync::atomic::Ordering::Relaxed);

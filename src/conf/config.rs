@@ -1,7 +1,5 @@
-// Copyright 2026 Hybrid Mount Developers
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 use std::{
+    collections::HashMap,
     fs,
     path::{Path, PathBuf},
 };
@@ -9,8 +7,7 @@ use std::{
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
-pub const CONFIG_FILE_DEFAULT: &str = "/data/adb/meta-hybrid/config.toml";
-use crate::defs::DEFAULT_HYBRID_MNT_DIR;
+use crate::defs;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct BackupConfig {
@@ -54,6 +51,32 @@ pub enum DefaultMode {
     Magic,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum MountMode {
+    #[default]
+    Overlay,
+    Magic,
+    Ignore,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ModuleRules {
+    #[serde(default)]
+    pub default_mode: MountMode,
+    #[serde(default)]
+    pub paths: HashMap<String, MountMode>,
+}
+
+impl ModuleRules {
+    pub fn get_mode(&self, relative_path: &str) -> MountMode {
+        if let Some(mode) = self.paths.get(relative_path) {
+            return mode.clone();
+        }
+        self.default_mode.clone()
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     #[serde(default = "default_moduledir")]
@@ -75,18 +98,20 @@ pub struct Config {
     pub hybrid_mnt_dir: String,
     #[serde(default)]
     pub default_mode: DefaultMode,
+    #[serde(default)]
+    pub rules: HashMap<String, ModuleRules>,
 }
 
 fn default_hybrid_mnt_dir() -> String {
-    DEFAULT_HYBRID_MNT_DIR.to_string()
+    defs::DEFAULT_HYBRID_MNT_DIR.to_string()
 }
 
 fn default_moduledir() -> PathBuf {
-    PathBuf::from("/data/adb/modules/")
+    PathBuf::from(defs::MODULES_DIR)
 }
 
 fn default_mountsource() -> String {
-    crate::utils::detect_mount_source()
+    crate::sys::mount::detect_mount_source()
 }
 
 fn deserialize_partitions_flexible<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
@@ -123,6 +148,7 @@ impl Default for Config {
             backup: BackupConfig::default(),
             hybrid_mnt_dir: default_hybrid_mnt_dir(),
             default_mode: DefaultMode::default(),
+            rules: HashMap::new(),
         }
     }
 }
@@ -137,7 +163,7 @@ impl Config {
     }
 
     pub fn load_default() -> Result<Self> {
-        Self::from_file(CONFIG_FILE_DEFAULT)
+        Self::from_file(defs::CONFIG_FILE)
     }
 
     pub fn save_to_file<P: AsRef<Path>>(&self, path: P) -> Result<()> {

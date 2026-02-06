@@ -2,5 +2,5 @@
 /output
 **/.DS_Store
 /.vscode
-webui/src/lib/constants_gen.js
+webui/src/lib/constants_gen.ts
 **.bak

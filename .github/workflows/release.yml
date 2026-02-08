@@ -73,9 +73,6 @@ jobs:
           
           sed -i "0,/^version = .*/s//version = \"${TAG_NAME#v}\"/" Cargo.toml
 
-      - name: Install ksusig
-        run: cargo install --git https://github.com/Kernel-SU/ksusig
-
       - name: Install build dependencies
         run: |
           sudo apt update

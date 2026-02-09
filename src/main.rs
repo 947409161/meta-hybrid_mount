@@ -56,7 +56,6 @@ fn load_final_config(cli: &Cli) -> Result<Config> {
 }
 
 fn main() -> Result<()> {
-    // [Change] Create RUN_DIR immediately as it now hosts critical state files (boot_counter)
     utils::ensure_dir_exists(defs::RUN_DIR)
         .with_context(|| format!("Failed to create run directory: {}", defs::RUN_DIR))?;
 
@@ -125,10 +124,6 @@ fn main() -> Result<()> {
 
     let mnt_base = utils::get_mnt();
     let img_path = PathBuf::from(defs::MODULES_IMG_FILE);
-
-    /*if let Err(e) = granary::create_snapshot(&config, "Boot Backup", "Automatic Pre-Mount") {
-        log::warn!("Backup: Failed to create boot snapshot: {}", e);
-    }*/
 
     utils::ensure_dir_exists(&mnt_base)?;
 

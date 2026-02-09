@@ -9,31 +9,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::defs;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct BackupConfig {
-    #[serde(default = "default_max_backups")]
-    pub max_backups: usize,
-    #[serde(default = "default_retention_days")]
-    pub retention_days: u64,
-}
-
-fn default_max_backups() -> usize {
-    20
-}
-
-fn default_retention_days() -> u64 {
-    0
-}
-
-impl Default for BackupConfig {
-    fn default() -> Self {
-        Self {
-            max_backups: default_max_backups(),
-            retention_days: default_retention_days(),
-        }
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum OverlayMode {
@@ -91,8 +66,6 @@ pub struct Config {
     pub disable_umount: bool,
     #[serde(default)]
     pub allow_umount_coexistence: bool,
-    #[serde(default, alias = "granary")]
-    pub backup: BackupConfig,
     #[serde(default)]
     pub default_mode: DefaultMode,
     #[serde(default)]
@@ -137,7 +110,6 @@ impl Default for Config {
             overlay_mode: OverlayMode::default(),
             disable_umount: false,
             allow_umount_coexistence: false,
-            backup: BackupConfig::default(),
             default_mode: DefaultMode::default(),
             rules: HashMap::new(),
         }

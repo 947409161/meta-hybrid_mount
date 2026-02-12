@@ -62,7 +62,7 @@ async fn main() -> Result<()> {
     let safe_commit_msg = escape_html(&commit_msg);
 
     let caption = format!(
-        "🌾 <b>Meta-Hybrid: {}</b>\n\n\
+        "🌾 <b>Hybrid-Mount: {}</b>\n\n\
         ⚖️ <b>重量 (Weight):</b> {:.2} MB\n\n\
         📝 <b>新性状 (Commit):</b>\n\
         <pre>{}</pre>\n\n\

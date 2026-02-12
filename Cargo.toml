@@ -3,7 +3,7 @@ members = ["xtask"]
 resolver = "2"
 
 [package]
-name = "meta-hybrid"
+name = "hybrid-mount"
 version = "3.0.2"
 edition = "2024"
 description = "Waiting for daemon..."
@@ -13,7 +13,7 @@ readme = "README.md"
 repository = "https://github.com/Hybrid-Mount/meta-hybrid_mount"
 
 [package.metadata.hybrid_mount]
-name = "Meta-Hybrid"
+name = "Hybrid Mount"
 update = "https://raw.githubusercontent.com/YuzakiKokuban/meta-hybrid_mount/master/update.json"
 
 

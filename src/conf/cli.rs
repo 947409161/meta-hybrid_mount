@@ -8,7 +8,7 @@ use clap::{Parser, Subcommand};
 use crate::defs;
 
 #[derive(Parser, Debug)]
-#[command(name = "meta-hybrid", version, about = "Hybrid Mount Metamodule")]
+#[command(name = "hybrid-mount", version, about = "Hybrid Mount Metamodule")]
 pub struct Cli {
     #[arg(short = 'c', long = "config")]
     pub config: Option<PathBuf>,

@@ -9,7 +9,7 @@ import type { AppConfig } from "./types";
 export const DEFAULT_CONFIG: AppConfig = {
   moduledir: "/data/adb/modules",
   mountsource: "KSU",
-  logfile: RUST_PATHS.DAEMON_LOG || "/data/adb/meta-hybrid/daemon.log",
+  logfile: RUST_PATHS.DAEMON_LOG || "/data/adb/hybrid-mount/daemon.log",
   partitions: [],
   disable_umount: false,
   allow_umount_coexistence: false,
@@ -18,7 +18,7 @@ export const DEFAULT_CONFIG: AppConfig = {
 
 export const PATHS = {
   ...RUST_PATHS,
-  BINARY: "/data/adb/modules/meta-hybrid/meta-hybrid",
+  BINARY: "/data/adb/modules/hybrid-mount/hybrid-mount",
 };
 
 export const DEFAULT_SEED = "#6750A4";

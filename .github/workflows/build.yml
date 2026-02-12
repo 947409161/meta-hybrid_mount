@@ -69,8 +69,8 @@ jobs:
           CI_VER="${LATEST_TAG}-${COMMIT_ID}"
           CI_CODE=0
           
-          echo "META_HYBRID_VERSION=$CI_VER" >> $GITHUB_ENV
-          echo "META_HYBRID_CODE=$CI_CODE" >> $GITHUB_ENV
+          echo "HYBRID_MOUNT_VERSION=$CI_VER" >> $GITHUB_ENV
+          echo "HYBRID_MOUNT_CODE=$CI_CODE" >> $GITHUB_ENV
           
           echo "Building Version: $CI_VER (Code: $CI_CODE)"
           
@@ -105,6 +105,6 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v6
         with:
-          name: Meta-Hybrid-CI-${{ env.META_HYBRID_VERSION }}
+          name: Hybrid-Mount-CI-${{ env.HYBRID_MOUNT_VERSION }}
           path: output/artifact_content/
           if-no-files-found: error

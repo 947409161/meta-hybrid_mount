@@ -15,8 +15,8 @@ case "$ARCH" in
   ;;
 esac
 ui_print "- Device Architecture: $ARCH ($ABI)"
-BIN_SOURCE="$MODPATH/binaries/$ABI/meta-hybrid"
-BIN_TARGET="$MODPATH/meta-hybrid"
+BIN_SOURCE="$MODPATH/binaries/$ABI/hybrid-mount"
+BIN_TARGET="$MODPATH/hybrid-mount"
 if [ ! -f "$BIN_SOURCE" ]; then
   abort "! Binary for $ABI not found in this zip!"
 fi
@@ -25,7 +25,7 @@ cp -f "$BIN_SOURCE" "$BIN_TARGET"
 set_perm "$BIN_TARGET" 0 0 0755
 rm -rf "$MODPATH/binaries"
 rm -rf "$MODPATH/system"
-BASE_DIR="/data/adb/meta-hybrid"
+BASE_DIR="/data/adb/hybrid-mount"
 mkdir -p "$BASE_DIR"
 
 KEY_volume_detect() {

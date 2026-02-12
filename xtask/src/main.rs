@@ -1,6 +1,3 @@
-// Copyright 2026 Hybrid Mount Developers
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 use std::{env, fs, path::Path, process::Command};
 
 use anyhow::{Context, Result};
@@ -134,7 +131,7 @@ fn build_full(release: bool, skip_webui: bool, target_arch: Option<Arch>) -> Res
     for arch in archs_to_build {
         println!(":: Compiling Core for {:?}...", arch);
         compile_core(release, arch)?;
-        let bin_name = "meta-hybrid";
+        let bin_name = "hybrid-mount";
         let profile = if release { "release" } else { "debug" };
         let src_bin = Path::new("target")
             .join(arch.android_abi())
@@ -162,7 +159,7 @@ fn build_full(release: bool, skip_webui: bool, target_arch: Option<Arch>) -> Res
     }
     println!(":: Injecting version: {}", version);
     println!(":: Creating Zip...");
-    let zip_file = output_dir.join(format!("Meta-Hybrid-{}.zip", version));
+    let zip_file = output_dir.join(format!("Hybrid-Mount-{}.zip", version));
     let zip_options = FileOptions::default()
         .compression_method(CompressionMethod::Deflated)
         .compression_level(Some(9));
@@ -200,11 +197,11 @@ fn generate_webui_constants(version: &str, is_release: bool) -> Result<()> {
 export const APP_VERSION = "{version}";
 export const IS_RELEASE = {is_release};
 export const RUST_PATHS = {{
-  CONFIG: "/data/adb/meta-hybrid/config.toml",
-  MODE_CONFIG: "/data/adb/meta-hybrid/module_mode.conf",
-  IMAGE_MNT: "/data/adb/meta-hybrid/mnt",
-  DAEMON_STATE: "/data/adb/meta-hybrid/run/daemon_state.json",
-  DAEMON_LOG: "/data/adb/meta-hybrid/daemon.log",
+  CONFIG: "/data/adb/hybrid-mount/config.toml",
+  MODE_CONFIG: "/data/adb/hybrid-mount/module_mode.conf",
+  IMAGE_MNT: "/data/adb/hybrid-mount/mnt",
+  DAEMON_STATE: "/data/adb/hybrid-mount/run/daemon_state.json",
+  DAEMON_LOG: "/data/adb/hybrid-mount/daemon.log",
 }} as const;
 export const BUILTIN_PARTITIONS = ["system", "vendor", "product", "system_ext", "odm", "oem", "apex"] as const;
 "#

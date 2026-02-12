@@ -84,7 +84,7 @@ pub fn scan(source_dir: &Path, cfg: &config::Config) -> Result<Vec<Module>> {
 
             if matches!(
                 id.as_str(),
-                "meta-hybrid" | "lost+found" | ".git" | ".idea" | ".vscode"
+                "hybrid-mount" | "lost+found" | ".git" | ".idea" | ".vscode"
             ) {
                 return None;
             }

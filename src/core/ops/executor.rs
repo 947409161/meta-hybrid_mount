@@ -101,7 +101,6 @@ where
 
     if !magic_queue.is_empty() {
         let magic_ws_path = tempdir.as_ref().join("magic_workspace");
-        let _ = umount_mgr::TMPFS.set(magic_ws_path.to_string_lossy().to_string());
 
         log::info!(
             ">> Phase 2: Magic Mount (Fallback/Native) using {}",

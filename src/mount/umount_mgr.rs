@@ -1,14 +1,13 @@
 use std::{
     collections::HashSet,
     path::Path,
-    sync::{LazyLock, Mutex, OnceLock},
+    sync::{LazyLock, Mutex},
 };
 
 use anyhow::Result;
 use ksu::{TryUmount, TryUmountFlags};
 use rustix::path::Arg;
 
-pub static TMPFS: OnceLock<String> = OnceLock::new();
 pub static LIST: LazyLock<Mutex<TryUmount>> = LazyLock::new(|| Mutex::new(TryUmount::new()));
 static HISTORY: LazyLock<Mutex<HashSet<String>>> = LazyLock::new(|| Mutex::new(HashSet::new()));
 

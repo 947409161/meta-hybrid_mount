@@ -21,6 +21,11 @@ where
     }
 
     let target = target.as_ref();
+    if target.starts_with("/vendor/lib") {
+        log::warn!("Cannot umount paths starting with /vendor/lib!!");
+        return Ok(());
+    }
+
     let path = target.as_str()?;
     let mut history = HISTORY
         .lock()

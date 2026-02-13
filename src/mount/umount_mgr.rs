@@ -48,6 +48,7 @@ pub fn commit() -> Result<()> {
         .lock()
         .map_err(|_| anyhow::anyhow!("Failed to lock umount list"))?;
 
+    list.format_msg(|p| format!("{p:?} umount successful "));
     list.flags(TryUmountFlags::empty());
     if let Err(e0) = list.umount() {
         log::debug!("try_umount(0) failed: {:#}, retrying with flags(2)", e0);

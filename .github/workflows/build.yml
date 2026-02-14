@@ -85,7 +85,7 @@ jobs:
 
       - name: Build All
         run: |
-          cargo xtask build --release --arch arm64
+          cargo xtask build --ci
 
       - name: Notify Telegram (CI)
         if: ${{ success() && github.event_name != 'pull_request' && env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != '' }}

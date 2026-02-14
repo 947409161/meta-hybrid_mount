@@ -59,5 +59,12 @@ pub const SENSITIVE_PARTITIONS: &[&str] = &[
     "prism",
 ];
 
+pub const IGNORE_UNOUNT_PARTITIONS: &[&str] = &[
+    "/vendor/lib",
+    "/vendor/lib64",
+    "/system/lib",
+    "/system/lib64",
+];
+
 pub const REPLACE_DIR_FILE_NAME: &str = ".replace";
 pub const REPLACE_DIR_XATTR: &str = "trusted.overlay.opaque";

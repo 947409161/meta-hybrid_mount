@@ -58,12 +58,22 @@ where
             lowerdir_strings.len()
         );
 
+        let mut mount_source = config.mountsource.clone();
+
+        if defs::IGNORE_UNOUNT_PARTITIONS
+            .iter()
+            .any(|s| s.trim() == op.target.trim())
+        {
+            log::warn!("Modifying the drive partition, mount source has been changed to overlay.");
+            mount_source = "overlay".to_string();
+        }
+
         match overlayfs::overlayfs::mount_overlay(
             &op.target,
             &lowerdir_strings,
             work_opt,
             upper_opt,
-            &config.mountsource,
+            &mount_source,
         ) {
             Ok(_) => {
                 for id in involved_modules {

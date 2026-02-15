@@ -8,8 +8,11 @@ use std::{
 use anyhow::{Context, Result, bail, ensure};
 use jwalk::WalkDir;
 use loopdev::LoopControl;
-use rustix::mount::{
-    MountFlags, MountPropagationFlags, UnmountFlags, mount, mount_change, unmount as umount,
+use rustix::{
+    mount::{
+        MountFlags, MountPropagationFlags, UnmountFlags, mount, mount_change, unmount as umount,
+    },
+    path::Arg,
 };
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -248,7 +251,11 @@ fn setup_ext4_image(target: &Path, img_path: &Path, moduledir: &Path) -> Result<
         }
     }
 
-    nuke::nuke_path(img_path);
+    if utils::KSU.load(std::sync::atomic::Ordering::Relaxed) {
+        nuke::nuke_path(target);
+    } else {
+        umount(target, UnmountFlags::DETACH)?;
+    }
 
     for dir_entry in WalkDir::new(target).parallelism(jwalk::Parallelism::Serial) {
         if let Some(path) = dir_entry.ok().map(|dir_entry| dir_entry.path()) {

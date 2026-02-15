@@ -8,16 +8,14 @@ use std::{fs, os::unix::fs::PermissionsExt, path::Path};
 use anyhow::{Context, Result};
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use loopdev::LoopControl;
+#[cfg(any(target_os = "linux", target_os = "android"))]
+use rustix::mount::{MountFlags, UnmountFlags, mount, unmount};
 use rustix::{
     fs::CWD,
     mount::{
         FsMountFlags, FsOpenFlags, MountAttrFlags, MoveMountFlags, fsconfig_create,
         fsconfig_set_string, fsmount, fsopen, move_mount,
     },
-};
-#[cfg(any(target_os = "linux", target_os = "android"))]
-use rustix::{
-    mount::{MountFlags, UnmountFlags, mount, unmount},
 };
 
 #[cfg(any(target_os = "linux", target_os = "android"))]

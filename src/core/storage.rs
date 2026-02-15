@@ -8,12 +8,9 @@ use std::{
 use anyhow::{Context, Result, bail, ensure};
 use jwalk::WalkDir;
 use loopdev::LoopControl;
-use rustix::{
-    mount::{
+use rustix::mount::{
         MountFlags, MountPropagationFlags, UnmountFlags, mount, mount_change, unmount as umount,
-    },
-    path::Arg,
-};
+    };
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use crate::mount::umount_mgr::send_umountable;

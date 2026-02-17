@@ -1,4 +1,5 @@
 use std::{env, fs, path::Path, process::Command};
+use std::io::Write;
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
@@ -10,8 +11,21 @@ mod zip_ext;
 use crate::zip_ext::zip_create_from_directory_with_options;
 
 #[derive(Deserialize)]
+struct HybridMountMetadata {
+    name: String,
+    update: String,
+}
+
+#[derive(Deserialize)]
+struct PackageMetadata {
+    hybrid_mount: HybridMountMetadata,
+}
+
+#[derive(Deserialize)]
 struct Package {
     version: String,
+    description: String,
+    metadata: PackageMetadata,
 }
 
 #[derive(Deserialize)]
@@ -64,8 +78,16 @@ enum Commands {
         arch: Option<Arch>,
         #[arg(long)]
         ci: bool,
+        #[arg(long)]
+        tag: Option<String>,
     },
     Lint,
+}
+
+struct VersionInfo {
+    clean_version: String,
+    full_version: String,
+    version_code: String,
 }
 
 fn main() -> Result<()> {
@@ -76,6 +98,7 @@ fn main() -> Result<()> {
             skip_webui,
             arch,
             ci,
+            tag,
         } => {
             let (cargo_release, webui_release, target_archs) = if ci {
                 (true, false, vec![Arch::Arm64])
@@ -88,7 +111,13 @@ fn main() -> Result<()> {
                 (release, release, archs)
             };
 
-            build_full(cargo_release, webui_release, skip_webui, target_archs)?;
+            let version_info = if let Some(tag_name) = tag {
+                resolve_release_version(&tag_name)?
+            } else {
+                resolve_local_or_ci_version()?
+            };
+
+            build_full(cargo_release, webui_release, skip_webui, target_archs, &version_info)?;
         }
         Commands::Lint => {
             run_clippy()?;
@@ -98,28 +127,15 @@ fn main() -> Result<()> {
 }
 
 fn run_clippy() -> Result<()> {
-    println!(":: Running Clippy...");
-
     let cargo = env::var("CARGO").unwrap_or_else(|_| "cargo".to_string());
-
     let status = Command::new(cargo)
-        .args([
-            "clippy",
-            "--workspace",
-            "--all-targets",
-            "--all-features",
-            "--",
-            "-D",
-            "warnings",
-        ])
+        .args(["clippy", "--workspace", "--all-targets", "--all-features", "--", "-D", "warnings"])
         .status()
         .context("Failed to run cargo clippy")?;
 
     if !status.success() {
         anyhow::bail!("Clippy found issues! Please fix them before committing.");
     }
-
-    println!(":: Clippy checks passed!");
     Ok(())
 }
 
@@ -128,6 +144,7 @@ fn build_full(
     webui_release: bool,
     skip_webui: bool,
     target_archs: Vec<Arch>,
+    version_info: &VersionInfo,
 ) -> Result<()> {
     let output_dir = Path::new("output");
     let stage_dir = output_dir.join("staging");
@@ -135,14 +152,12 @@ fn build_full(
         fs::remove_dir_all(output_dir)?;
     }
     fs::create_dir_all(&stage_dir)?;
-    let version = get_version()?;
+    
     if !skip_webui {
-        println!(":: Building WebUI...");
-        build_webui(&version, webui_release)?;
+        build_webui(&version_info.clean_version, webui_release)?;
     }
 
     for arch in target_archs {
-        println!(":: Compiling Core for {:?}...", arch);
         compile_core(cargo_release, arch)?;
         let bin_name = "hybrid-mount";
         let profile = if cargo_release { "release" } else { "debug" };
@@ -158,27 +173,56 @@ fn build_full(
                 stage_bin_dir.join(bin_name),
                 &file::CopyOptions::new().overwrite(true),
             )?;
-        } else {
-            println!("Warning: Binary not found at {}", src_bin.display());
         }
     }
-    println!(":: Copying module scripts...");
+    
     let module_src = Path::new("module");
     let options = dir::CopyOptions::new().overwrite(true).content_only(true);
     dir::copy(module_src, &stage_dir, &options)?;
+
+    generate_module_prop(&stage_dir, version_info)?;
+
     let gitignore = stage_dir.join(".gitignore");
     if gitignore.exists() {
         fs::remove_file(gitignore)?;
     }
-    println!(":: Injecting version: {}", version);
-    println!(":: Creating Zip...");
-    let zip_file = output_dir.join(format!("Hybrid-Mount-{}.zip", version));
+
+    let zip_file = output_dir.join(format!("Hybrid-Mount-{}.zip", version_info.full_version));
     let zip_options = FileOptions::default()
         .compression_method(CompressionMethod::Deflated)
         .compression_level(Some(9));
     zip_create_from_directory_with_options(&zip_file, &stage_dir, |_| zip_options)?;
-    println!(":: Build Complete: {}", zip_file.display());
 
+    Ok(())
+}
+
+fn generate_module_prop(stage_dir: &Path, info: &VersionInfo) -> Result<()> {
+    let toml_content = fs::read_to_string("Cargo.toml")?;
+    let config: CargoConfig = toml::from_str(&toml_content)?;
+    
+    let meta = config.package.metadata.hybrid_mount;
+
+    let prop_content = format!(
+        r#"id=hybrid_mount
+name={}
+version={}
+versionCode={}
+author=Hybrid Mount Developers
+description={}
+updateJson={}
+metamodule=1
+"#,
+        meta.name,
+        info.full_version,
+        info.version_code,
+        config.package.description,
+        meta.update
+    );
+
+    let prop_path = stage_dir.join("module.prop");
+    let mut file = fs::File::create(prop_path)?;
+    file.write_all(prop_content.as_bytes())?;
+    
     Ok(())
 }
 
@@ -223,10 +267,6 @@ export const BUILTIN_PARTITIONS = ["system", "vendor", "product", "system_ext", 
         fs::create_dir_all(parent)?;
     }
     fs::write(path, content)?;
-    let old_path = Path::new("webui/src/lib/constants_gen.js");
-    if old_path.exists() {
-        let _ = fs::remove_file(old_path);
-    }
     Ok(())
 }
 
@@ -254,10 +294,68 @@ fn compile_core(release: bool, arch: Arch) -> Result<()> {
     Ok(())
 }
 
-fn get_version() -> Result<String> {
+fn calculate_version_code(version_str: &str) -> String {
+    let parts: Vec<&str> = version_str.split('.').collect();
+    if parts.len() >= 3 {
+        let major: u32 = parts[0].parse().unwrap_or(0);
+        let minor: u32 = parts[1].parse().unwrap_or(0);
+        let patch: u32 = parts[2].parse().unwrap_or(0);
+        format!("{}{:02}{:02}", major, minor, patch)
+    } else {
+        "0".to_string()
+    }
+}
+
+fn resolve_release_version(tag: &str) -> Result<VersionInfo> {
+    let clean_version = tag.trim_start_matches('v');
+    update_cargo_toml_version(clean_version)?;
+    
+    let commit_count = cal_git_code()?;
+    let full_version = format!("{}-{}", clean_version, commit_count);
+    let version_code = calculate_version_code(clean_version);
+
+    Ok(VersionInfo {
+        clean_version: clean_version.to_string(),
+        full_version,
+        version_code,
+    })
+}
+
+fn resolve_local_or_ci_version() -> Result<VersionInfo> {
     let toml = fs::read_to_string("Cargo.toml")?;
     let data: CargoConfig = toml::from_str(&toml)?;
-    Ok(format!("{}-{}", data.package.version, cal_git_code()?))
+    let clean_version = data.package.version;
+    let commit_count = cal_git_code()?;
+    
+    let full_version = format!("{}-{}", clean_version, commit_count);
+    let version_code = calculate_version_code(&clean_version);
+
+    Ok(VersionInfo {
+        clean_version,
+        full_version,
+        version_code,
+    })
+}
+
+fn update_cargo_toml_version(version: &str) -> Result<()> {
+    let content = fs::read_to_string("Cargo.toml")?;
+    let mut new_lines = Vec::new();
+    let mut replaced = false;
+
+    for line in content.lines() {
+        if !replaced && line.starts_with("version =") {
+            new_lines.push(format!("version = \"{}\"", version));
+            replaced = true;
+        } else {
+            new_lines.push(line.to_string());
+        }
+    }
+    
+    let mut file = fs::File::create("Cargo.toml")?;
+    for line in new_lines {
+        writeln!(file, "{}", line)?;
+    }
+    Ok(())
 }
 
 fn cal_git_code() -> Result<i32> {

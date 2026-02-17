@@ -5,15 +5,6 @@ on:
     tags:
       - "v*.*.*"
   workflow_dispatch:
-    inputs:
-      version_name:
-        description: 'Version Name (e.g. v1.0.0)'
-        required: true
-        default: 'v1.0.0'
-      version_code:
-        description: 'Version Code (leave empty to use Run Number)'
-        required: false
-        default: ''
 
 jobs:
   release:
@@ -52,27 +43,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Update Version Numbers
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            TAG_NAME="${{ github.event.inputs.version_name }}"
-            VERSION_CODE="${{ github.event.inputs.version_code }}"
-            [[ -z "$VERSION_CODE" ]] && VERSION_CODE="${{ github.run_number }}"
-          else
-            TAG_NAME="${{ github.ref_name }}"
-            VERSION_CODE="${{ github.run_number }}"
-          fi
-          
-          echo "HYBRID_MOUNT_VERSION=$TAG_NAME" >> $GITHUB_ENV
-          echo "HYBRID_MOUNT_CODE=$VERSION_CODE" >> $GITHUB_ENV
-          
-          echo "Bumping to $TAG_NAME ($VERSION_CODE)"
-          
-          sed -i "s/^version=.*/version=$TAG_NAME/" module/module.prop
-          sed -i "s/^versionCode=.*/versionCode=$VERSION_CODE/" module/module.prop
-          
-          sed -i "0,/^version = .*/s//version = \"${TAG_NAME#v}\"/" Cargo.toml
-
       - name: Install build dependencies
         run: |
           sudo apt update
@@ -84,15 +54,16 @@ jobs:
           HYBRID_MOUNT_SIGN_KEY: ${{ secrets.SIGNING_KEY }}
           HYBRID_MOUNT_SIGN_CERT: ${{ secrets.SIGNING_CERT }}
         run: |
-          cargo xtask build --release
+          cargo xtask build --release --tag ${{ github.ref_name }}
 
       - name: Notify Telegram (Release)
+        if: secrets.TELEGRAM_BOT_TOKEN != ''
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           chmod +x notify
-          ./notify "6" "丰收 (Harvest)"
+          ./notify "6" "丰收 (Harvest) - ${{ github.ref_name }}"
 
       - name: Generate Changelog
         id: meta
@@ -100,8 +71,10 @@ jobs:
           ZIP_FILE=$(cd output && ls *.zip | head -n 1)
           ZIP_NAME=$(basename "$ZIP_FILE")
           REPO="${{ github.repository }}"
-          TAG="${{ env.HYBRID_MOUNT_VERSION }}"
-          CODE="${{ env.HYBRID_MOUNT_CODE }}"
+          TAG="${{ github.ref_name }}"
+          
+          CLEAN_VERSION="${TAG#v}"
+          VERSION_CODE=$(echo $CLEAN_VERSION | awk -F. '{printf "%d%02d%02d", $1, $2, $3}')
           
           echo "ZIP_PATH=output/$ZIP_NAME" >> $GITHUB_ENV
           
@@ -111,7 +84,7 @@ jobs:
           cat <<EOF > /tmp/update.json
           {
             "version": "$TAG",
-            "versionCode": $CODE,
+            "versionCode": $VERSION_CODE,
             "zipUrl": "$DOWNLOAD_URL",
             "changelog": "$CHANGELOG_URL"
           }
@@ -136,20 +109,8 @@ jobs:
           files: ${{ env.ZIP_PATH }}
           body_path: /tmp/changelog.md
 
-      - name: Create Remote Release (KernelSU-Repo)
-        uses: softprops/action-gh-release@v2
+      - name: Sync Version to Master
         if: startsWith(github.ref, 'refs/tags/')
-        with:
-          token: ${{ secrets.RELEASE_TOKEN }}
-          repository: KernelSU-Modules-Repo/hybrid-mount
-          tag_name: ${{ env.HYBRID_MOUNT_VERSION }}
-          draft: false
-          prerelease: false
-          files: ${{ env.ZIP_PATH }}
-          body_path: /tmp/changelog.md
-
-      - name: Commit and Push Changes
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -158,12 +119,11 @@ jobs:
           git checkout master
           
           mv /tmp/update.json update.json
-          mv /tmp/changelog.md changelog.md
+          cat /tmp/changelog.md | cat - changelog.md > temp && mv temp changelog.md
           
-          git add update.json changelog.md
-          git add module/module.prop Cargo.toml
+          git add update.json changelog.md Cargo.toml
           
           if ! git diff --staged --quiet; then
-            git commit -m "chore(release): bump version to ${{ env.HYBRID_MOUNT_VERSION }} [skip ci]"
+            git commit -m "chore(release): sync version ${{ github.ref_name }} [skip ci]"
             git push origin master
           fi

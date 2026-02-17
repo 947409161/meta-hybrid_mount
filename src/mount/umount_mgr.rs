@@ -25,13 +25,6 @@ where
         .lock()
         .map_err(|_| anyhow::anyhow!("Failed to lock history mutex"))?;
 
-    for i in history.iter() {
-        if i.starts_with(path) {
-            log::debug!("umount list already includes the parent directory of {path}.");
-            return Ok(());
-        }
-    }
-
     history.insert(path.to_string());
     LIST.lock()
         .map_err(|_| anyhow::anyhow!("Failed to lock umount list"))?

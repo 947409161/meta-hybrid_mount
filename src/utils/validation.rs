@@ -9,7 +9,6 @@ use std::{
 use anyhow::{Result, bail};
 use regex_lite::Regex;
 
-
 pub static KSU: AtomicBool = AtomicBool::new(false);
 
 static MODULE_ID_REGEX: OnceLock<Regex> = OnceLock::new();

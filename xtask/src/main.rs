@@ -1,5 +1,4 @@
-use std::{env, fs, path::Path, process::Command};
-use std::io::Write;
+use std::{env, fs, io::Write, path::Path, process::Command};
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
@@ -117,7 +116,13 @@ fn main() -> Result<()> {
                 resolve_local_or_ci_version()?
             };
 
-            build_full(cargo_release, webui_release, skip_webui, target_archs, &version_info)?;
+            build_full(
+                cargo_release,
+                webui_release,
+                skip_webui,
+                target_archs,
+                &version_info,
+            )?;
         }
         Commands::Lint => {
             run_clippy()?;
@@ -129,7 +134,15 @@ fn main() -> Result<()> {
 fn run_clippy() -> Result<()> {
     let cargo = env::var("CARGO").unwrap_or_else(|_| "cargo".to_string());
     let status = Command::new(cargo)
-        .args(["clippy", "--workspace", "--all-targets", "--all-features", "--", "-D", "warnings"])
+        .args([
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings",
+        ])
         .status()
         .context("Failed to run cargo clippy")?;
 
@@ -152,7 +165,7 @@ fn build_full(
         fs::remove_dir_all(output_dir)?;
     }
     fs::create_dir_all(&stage_dir)?;
-    
+
     if !skip_webui {
         build_webui(&version_info.clean_version, webui_release)?;
     }
@@ -175,7 +188,7 @@ fn build_full(
             )?;
         }
     }
-    
+
     let module_src = Path::new("module");
     let options = dir::CopyOptions::new().overwrite(true).content_only(true);
     dir::copy(module_src, &stage_dir, &options)?;
@@ -199,7 +212,7 @@ fn build_full(
 fn generate_module_prop(stage_dir: &Path, info: &VersionInfo) -> Result<()> {
     let toml_content = fs::read_to_string("Cargo.toml")?;
     let config: CargoConfig = toml::from_str(&toml_content)?;
-    
+
     let meta = config.package.metadata.hybrid_mount;
 
     let prop_content = format!(
@@ -212,17 +225,13 @@ description={}
 updateJson={}
 metamodule=1
 "#,
-        meta.name,
-        info.full_version,
-        info.version_code,
-        config.package.description,
-        meta.update
+        meta.name, info.full_version, info.version_code, config.package.description, meta.update
     );
 
     let prop_path = stage_dir.join("module.prop");
     let mut file = fs::File::create(prop_path)?;
     file.write_all(prop_content.as_bytes())?;
-    
+
     Ok(())
 }
 
@@ -309,7 +318,7 @@ fn calculate_version_code(version_str: &str) -> String {
 fn resolve_release_version(tag: &str) -> Result<VersionInfo> {
     let clean_version = tag.trim_start_matches('v');
     update_cargo_toml_version(clean_version)?;
-    
+
     let commit_count = cal_git_code()?;
     let full_version = format!("{}-{}", clean_version, commit_count);
     let version_code = calculate_version_code(clean_version);
@@ -326,7 +335,7 @@ fn resolve_local_or_ci_version() -> Result<VersionInfo> {
     let data: CargoConfig = toml::from_str(&toml)?;
     let clean_version = data.package.version;
     let commit_count = cal_git_code()?;
-    
+
     let full_version = format!("{}-{}", clean_version, commit_count);
     let version_code = calculate_version_code(&clean_version);
 
@@ -350,7 +359,7 @@ fn update_cargo_toml_version(version: &str) -> Result<()> {
             new_lines.push(line.to_string());
         }
     }
-    
+
     let mut file = fs::File::create("Cargo.toml")?;
     for line in new_lines {
         writeln!(file, "{}", line)?;

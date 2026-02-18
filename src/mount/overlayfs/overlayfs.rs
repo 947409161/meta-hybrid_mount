@@ -20,7 +20,7 @@ use crate::{
         overlayfs::utils::{fs, umount_dir},
         umount_mgr::send_umountable,
     },
-    utils::ensure_dir_exists,
+    sys::fs::ensure_dir_exists,
 };
 
 const MAX_LAYERS: usize = 64;

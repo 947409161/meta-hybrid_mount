@@ -22,7 +22,7 @@ use crate::{
         magic_mount::utils::{clone_symlink, collect_module_files, mount_mirror},
         node::{Node, NodeFileType},
     },
-    utils::ensure_dir_exists,
+    sys::fs::ensure_dir_exists,
 };
 
 static MOUNTED_FILES: AtomicU32 = AtomicU32::new(0);

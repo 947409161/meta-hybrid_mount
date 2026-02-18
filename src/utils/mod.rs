@@ -1,4 +1,3 @@
-pub mod fs;
 pub mod process;
 pub mod validation;
 
@@ -6,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
-pub use self::{fs::*, process::*, validation::*};
+pub use self::{process::*, validation::*};
 
 pub fn get_mnt() -> PathBuf {
     let mut name = String::new();

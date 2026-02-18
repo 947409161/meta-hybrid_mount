@@ -56,7 +56,7 @@ fn load_final_config(cli: &Cli) -> Result<Config> {
 }
 
 fn main() -> Result<()> {
-    utils::ensure_dir_exists(defs::RUN_DIR)
+    sys::fs::ensure_dir_exists(defs::RUN_DIR)
         .with_context(|| format!("Failed to create run directory: {}", defs::RUN_DIR))?;
 
     let threads = std::thread::available_parallelism()
@@ -112,7 +112,7 @@ fn main() -> Result<()> {
     let mnt_base = utils::get_mnt();
     let img_path = PathBuf::from(defs::MODULES_IMG_FILE);
 
-    utils::ensure_dir_exists(&mnt_base)?;
+    sys::fs::ensure_dir_exists(&mnt_base)?;
 
     MountController::new(config, &mnt_base)
         .init_storage(&mnt_base, &img_path)

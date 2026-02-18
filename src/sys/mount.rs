@@ -4,7 +4,7 @@ use anyhow::{Context, Result, bail};
 use procfs::process::Process;
 use rustix::mount::{MountFlags, mount};
 
-use crate::utils::ensure_dir_exists;
+use crate::sys::fs::ensure_dir_exists;
 
 pub fn detect_mount_source() -> String {
     if ksu::version().is_some() {

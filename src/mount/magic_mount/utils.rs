@@ -1,5 +1,3 @@
-// Copyright 2026 https://github.com/Tools-cx-app/meta-magic_mount
-
 use std::{
     collections::HashSet,
     fs::{self, DirEntry, Metadata, create_dir, create_dir_all, read_link},
@@ -16,7 +14,8 @@ use rustix::{
 use crate::{
     defs::{DISABLE_FILE_NAME, REMOVE_FILE_NAME, SKIP_MOUNT_FILE_NAME},
     mount::node::Node,
-    utils::{lgetfilecon, lsetfilecon, validate_module_id},
+    sys::fs::{lgetfilecon, lsetfilecon},
+    utils::validate_module_id,
 };
 
 fn metadata_path<P>(path: P, node: &Node) -> Result<(Metadata, PathBuf)>

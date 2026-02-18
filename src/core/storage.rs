@@ -17,8 +17,12 @@ use crate::mount::umount_mgr::send_umountable;
 use crate::{
     defs,
     mount::overlayfs::utils as overlay_utils,
-    sys::{mount::is_mounted, nuke},
-    utils::{self, ensure_dir_exists, lsetfilecon},
+    sys::{
+        fs::{ensure_dir_exists, lsetfilecon},
+        mount::is_mounted,
+        nuke,
+    },
+    utils,
 };
 
 const DEFAULT_SELINUX_CONTEXT: &str = "u:object_r:system_file:s0";
@@ -199,7 +203,7 @@ pub fn setup(
 
 fn try_setup_tmpfs(target: &Path, mount_source: &str) -> Result<bool> {
     if crate::sys::mount::mount_tmpfs(target, mount_source).is_ok() {
-        if utils::is_overlay_xattr_supported().unwrap_or(false) {
+        if crate::sys::fs::is_overlay_xattr_supported().unwrap_or(false) {
             log::info!("Tmpfs mounted and supports xattrs (CONFIG_TMPFS_XATTR=y).");
             return Ok(true);
         } else {
@@ -235,7 +239,7 @@ fn setup_ext4_image(target: &Path, img_path: &Path, moduledir: &Path) -> Result<
 
     check_image(img_path)?;
 
-    utils::lsetfilecon(img_path, "u:object_r:ksu_file:s0").ok();
+    lsetfilecon(img_path, "u:object_r:ksu_file:s0").ok();
 
     ensure_dir_exists(target)?;
     if overlay_utils::mount_ext4(img_path, target).is_err() {
@@ -256,7 +260,7 @@ fn setup_ext4_image(target: &Path, img_path: &Path, moduledir: &Path) -> Result<
 
     for dir_entry in WalkDir::new(target).parallelism(jwalk::Parallelism::Serial) {
         if let Some(path) = dir_entry.ok().map(|dir_entry| dir_entry.path()) {
-            let _ = utils::lsetfilecon(&path, DEFAULT_SELINUX_CONTEXT);
+            let _ = lsetfilecon(&path, DEFAULT_SELINUX_CONTEXT);
         }
     }
 

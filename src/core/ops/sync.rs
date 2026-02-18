@@ -4,7 +4,11 @@ use anyhow::Result;
 use rayon::prelude::*;
 use walkdir::WalkDir;
 
-use crate::{core::inventory::Module, defs, utils};
+use crate::{
+    core::inventory::Module,
+    defs,
+    sys::fs::{prune_empty_dirs, set_overlay_opaque, sync_dir},
+};
 
 pub fn perform_sync(modules: &[Module], target_base: &Path) -> Result<()> {
     log::info!("Starting smart module sync to {}", target_base.display());
@@ -30,13 +34,13 @@ pub fn perform_sync(modules: &[Module], target_base: &Path) -> Result<()> {
                 let _ = fs::remove_dir_all(&tmp_dst);
             }
 
-            if let Err(e) = utils::sync_dir(&module.source_path, &tmp_dst, true) {
+            if let Err(e) = sync_dir(&module.source_path, &tmp_dst, true) {
                 log::error!("Failed to sync module {}: {}", module.id, e);
                 let _ = fs::remove_dir_all(&tmp_dst);
                 return;
             }
 
-            if let Err(e) = utils::prune_empty_dirs(&tmp_dst) {
+            if let Err(e) = prune_empty_dirs(&tmp_dst) {
                 log::warn!("Failed to prune empty dirs for {}: {}", module.id, e);
             }
 
@@ -84,7 +88,7 @@ fn apply_overlay_opaque_flags(root: &Path) -> Result<()> {
             && entry.file_name() == defs::REPLACE_DIR_FILE_NAME
             && let Some(parent) = entry.path().parent()
         {
-            utils::set_overlay_opaque(parent)?;
+            set_overlay_opaque(parent)?;
             log::debug!("Set overlay opaque xattr on: {}", parent.display());
         }
     }

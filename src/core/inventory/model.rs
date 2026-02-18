@@ -14,7 +14,8 @@ use super::scanner as inventory;
 use crate::{
     conf::config::{self, MountMode},
     core::state::RuntimeState,
-    defs, utils,
+    defs,
+    sys::fs::atomic_write,
 };
 
 static MODULE_PROP_REGEX: OnceLock<Regex> = OnceLock::new();
@@ -151,7 +152,7 @@ pub fn update_description(storage_mode: &str, overlay_count: usize, magic_count:
     };
 
     let content = lines.join("\n");
-    if let Err(e) = utils::atomic_write(prop_path, format!("{}\n", content)) {
+    if let Err(e) = atomic_write(prop_path, format!("{}\n", content)) {
         log::warn!("Failed to update module description: {}", e);
     }
 }

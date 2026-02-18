@@ -11,7 +11,6 @@ pub trait StorageBackend: Send + Sync {
 }
 
 pub trait MountDriver: Send + Sync {
-    fn name(&self) -> &str;
     fn is_supported(&self) -> Result<bool>;
     fn mount_overlay(&self, op: &OverlayOperation, config: &Config) -> Result<Vec<String>>;
     fn mount_magic(

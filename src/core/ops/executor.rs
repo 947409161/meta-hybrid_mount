@@ -93,10 +93,6 @@ where
 pub struct NativeOverlayDriver;
 
 impl MountDriver for NativeOverlayDriver {
-    fn name(&self) -> &str {
-        "NativeOverlay"
-    }
-
     fn is_supported(&self) -> Result<bool> {
         overlayfs::utils::is_overlay_supported()
     }

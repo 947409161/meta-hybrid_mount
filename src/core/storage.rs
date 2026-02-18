@@ -57,11 +57,11 @@ impl StorageBackend for ErofsBackend {
     fn commit(&mut self, disable_umount: bool) -> Result<()> {
         if self.mode == "erofs_staging" {
             create_erofs_image(&self.mount_point, &self.backing_image)?;
-            if let Err(_) = umount(&self.mount_point, UnmountFlags::DETACH) {}
+            umount(&self.mount_point, UnmountFlags::DETACH)?;
             let _ = fs::remove_dir(&self.mount_point);
             ensure_dir_exists(&self.final_target)?;
             mount_erofs_image(&self.backing_image, &self.final_target)?;
-            if let Err(_) = mount_change(&self.final_target, MountPropagationFlags::PRIVATE) {}
+            mount_change(&self.final_target, MountPropagationFlags::PRIVATE)?;
             #[cfg(any(target_os = "linux", target_os = "android"))]
             if !disable_umount {
                 let _ = send_umountable(&self.final_target);

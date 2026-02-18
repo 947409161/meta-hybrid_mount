@@ -90,9 +90,9 @@ where
     })
 }
 
-pub struct NativeOverlayDriver;
+pub struct NativeMount;
 
-impl MountDriver for NativeOverlayDriver {
+impl MountDriver for NativeMount {
     fn is_supported(&self) -> Result<bool> {
         overlayfs::utils::is_overlay_supported()
     }

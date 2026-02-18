@@ -5,11 +5,13 @@ use anyhow::Result;
 use crate::{
     conf::config::Config,
     core::{
-        inventory,
-        inventory::model as modules,
-        ops::{executor, executor::NativeOverlayDriver, planner, sync},
-        state, storage,
-        storage::StorageHandle,
+        inventory::{self, model as modules},
+        ops::{
+            executor::{self, NativeMount},
+            planner, sync,
+        },
+        state,
+        storage::{self, StorageHandle},
     },
 };
 
@@ -139,7 +141,7 @@ impl MountController<ModulesReady> {
 
 impl MountController<Planned> {
     pub fn execute(self) -> Result<MountController<Executed>> {
-        let driver = NativeOverlayDriver;
+        let driver = NativeMount;
         let result = executor::execute(
             &self.state.plan,
             &self.config,

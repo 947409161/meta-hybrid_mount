@@ -53,8 +53,7 @@ where
                 }
             }
         }
-        final_overlay_ids
-            .retain(|id| !final_magic_ids.contains(id) && !final_hymofs_ids.contains(id));
+        final_overlay_ids.retain(|id| !final_magic_ids.contains(id) && !final_hymofs_ids.contains(id));
     } else {
         final_magic_ids.extend(plan.overlay_module_ids.clone());
     }
@@ -194,10 +193,10 @@ impl MountDriver for NativeMount {
 
     fn mount_hymofs(
         &self,
-        _ids: &HashSet<String>,
-        _config: &config::Config,
-        _tempdir: &Path,
+        ids: &HashSet<String>,
+        config: &config::Config,
+        tempdir: &Path,
     ) -> Result<Vec<String>> {
-        Ok(vec![])
+        crate::mount::hymofs::driver::apply_hymofs_rules(ids, config, tempdir)
     }
 }

@@ -60,6 +60,8 @@ impl MountController<Init> {
         mnt_base: &Path,
         img_path: &Path,
     ) -> Result<MountController<StorageReady>> {
+        let _ = crate::mount::hymofs::driver::load_kernel_module();
+
         let handle = storage::setup(
             mnt_base,
             img_path,
@@ -167,6 +169,7 @@ impl MountController<Executed> {
             self.state.handle.mode(),
             self.state.result.overlay_module_ids.len(),
             self.state.result.magic_module_ids.len(),
+            self.state.result.hymofs_module_ids.len(),
         );
 
         let mut active_mounts: Vec<String> = self
@@ -185,6 +188,7 @@ impl MountController<Executed> {
             self.state.handle.mount_point().to_path_buf(),
             self.state.result.overlay_module_ids,
             self.state.result.magic_module_ids,
+            self.state.result.hymofs_module_ids,
             active_mounts,
         );
 

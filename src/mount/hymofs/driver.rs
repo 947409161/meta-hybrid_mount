@@ -2,18 +2,19 @@ use std::{
     collections::HashSet,
     ffi::CString,
     fs::File,
-    os::fd::AsRawFd,
+    os::fd::{AsFd, AsRawFd},
     path::{Path, PathBuf},
 };
 
 use anyhow::{Context, Result};
+use rustix::system::finit_module;
 use walkdir::WalkDir;
 
 use crate::{
     conf::config,
     mount::hymofs::ioctl::{
-        get_hymofs_fd, hymo_ioc_add_merge_rule, hymo_ioc_add_rule, hymo_ioc_set_enabled,
-        HymoSyscallArg,
+        HymoSyscallArg, get_hymofs_fd, hymo_ioc_add_merge_rule, hymo_ioc_add_rule,
+        hymo_ioc_set_enabled,
     },
 };
 
@@ -26,14 +27,7 @@ pub fn load_kernel_module() -> Result<()> {
     let file = File::open(ko_path)?;
     let args = CString::new("hymo_syscall_nr=142")?;
 
-    unsafe {
-        libc::syscall(
-            libc::SYS_finit_module,
-            file.as_raw_fd(),
-            args.as_ptr(),
-            0,
-        );
-    }
+    finit_module(file.as_fd(), &args, 0);
 
     Ok(())
 }
@@ -107,3 +101,4 @@ pub fn apply_hymofs_rules(
 
     Ok(applied_ids)
 }
+

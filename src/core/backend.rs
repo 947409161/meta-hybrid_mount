@@ -19,4 +19,10 @@ pub trait MountDriver: Send + Sync {
         config: &Config,
         tempdir: &Path,
     ) -> Result<Vec<String>>;
+    fn mount_hymofs(
+        &self,
+        ids: &HashSet<String>,
+        config: &Config,
+        tempdir: &Path,
+    ) -> Result<Vec<String>>;
 }

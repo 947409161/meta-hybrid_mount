@@ -27,6 +27,7 @@ pub struct MountPlan {
     pub overlay_ops: Vec<OverlayOperation>,
     pub overlay_module_ids: Vec<String>,
     pub magic_module_ids: Vec<String>,
+    pub hymofs_module_ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -156,6 +157,7 @@ pub fn generate(
 
     let mut overlay_ids = HashSet::new();
     let mut magic_ids = HashSet::new();
+    let mut hymofs_ids = HashSet::new();
 
     let sensitive_partitions: HashSet<&str> = defs::SENSITIVE_PARTITIONS.iter().cloned().collect();
 
@@ -186,6 +188,10 @@ pub fn generate(
                 let mode = module.rules.get_mode(&dir_name);
                 if matches!(mode, MountMode::Magic) {
                     magic_ids.insert(module.id.clone());
+                    continue;
+                }
+                if matches!(mode, MountMode::Hymofs) {
+                    hymofs_ids.insert(module.id.clone());
                     continue;
                 }
                 if matches!(mode, MountMode::Ignore) {
@@ -292,8 +298,10 @@ pub fn generate(
 
     plan.overlay_module_ids = overlay_ids.into_iter().collect();
     plan.magic_module_ids = magic_ids.into_iter().collect();
+    plan.hymofs_module_ids = hymofs_ids.into_iter().collect();
     plan.overlay_module_ids.sort();
     plan.magic_module_ids.sort();
+    plan.hymofs_module_ids.sort();
 
     Ok(plan)
 }

@@ -18,6 +18,8 @@ pub struct RuntimeState {
     pub overlay_modules: Vec<String>,
     pub magic_modules: Vec<String>,
     #[serde(default)]
+    pub hymofs_modules: Vec<String>,
+    #[serde(default)]
     pub active_mounts: Vec<String>,
     #[serde(default)]
     pub tmpfs_xattr_supported: bool,
@@ -30,6 +32,7 @@ impl RuntimeState {
         mount_point: PathBuf,
         overlay_modules: Vec<String>,
         magic_modules: Vec<String>,
+        hymofs_modules: Vec<String>,
         active_mounts: Vec<String>,
     ) -> Self {
         let start = SystemTime::now();
@@ -50,6 +53,7 @@ impl RuntimeState {
             mount_point,
             overlay_modules,
             magic_modules,
+            hymofs_modules,
             active_mounts,
             tmpfs_xattr_supported,
         }

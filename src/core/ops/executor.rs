@@ -20,6 +20,7 @@ use crate::{
 pub struct ExecutionResult {
     pub overlay_module_ids: Vec<String>,
     pub magic_module_ids: Vec<String>,
+    pub hymofs_module_ids: Vec<String>,
 }
 
 pub fn execute<P, D>(
@@ -34,6 +35,7 @@ where
 {
     let mut final_magic_ids: HashSet<String> = plan.magic_module_ids.iter().cloned().collect();
     let mut final_overlay_ids: HashSet<String> = HashSet::new();
+    let mut final_hymofs_ids: HashSet<String> = plan.hymofs_module_ids.iter().cloned().collect();
 
     if driver.is_supported()? {
         for op in &plan.overlay_ops {
@@ -51,7 +53,8 @@ where
                 }
             }
         }
-        final_overlay_ids.retain(|id| !final_magic_ids.contains(id));
+        final_overlay_ids
+            .retain(|id| !final_magic_ids.contains(id) && !final_hymofs_ids.contains(id));
     } else {
         final_magic_ids.extend(plan.overlay_module_ids.clone());
     }
@@ -68,6 +71,18 @@ where
         }
     }
 
+    let mut hymofs_queue: Vec<String> = final_hymofs_ids.iter().cloned().collect();
+    hymofs_queue.sort();
+
+    if !hymofs_queue.is_empty() {
+        let hymofs_need_ids: HashSet<String> = hymofs_queue.into_iter().collect();
+        if let Ok(mounted_ids) = driver.mount_hymofs(&hymofs_need_ids, config, tempdir.as_ref()) {
+            final_hymofs_ids.retain(|id| mounted_ids.contains(id));
+        } else {
+            final_hymofs_ids.clear();
+        }
+    }
+
     let _ = umount_dir(tempdir.as_ref());
 
     #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -80,13 +95,16 @@ where
 
     let mut result_overlay: Vec<String> = final_overlay_ids.into_iter().collect();
     let mut result_magic: Vec<String> = final_magic_ids.into_iter().collect();
+    let mut result_hymofs: Vec<String> = final_hymofs_ids.into_iter().collect();
 
     result_overlay.sort();
     result_magic.sort();
+    result_hymofs.sort();
 
     Ok(ExecutionResult {
         overlay_module_ids: result_overlay,
         magic_module_ids: result_magic,
+        hymofs_module_ids: result_hymofs,
     })
 }
 
@@ -172,5 +190,14 @@ impl MountDriver for NativeMount {
         )?;
 
         Ok(ids.iter().cloned().collect())
+    }
+
+    fn mount_hymofs(
+        &self,
+        _ids: &HashSet<String>,
+        _config: &config::Config,
+        _tempdir: &Path,
+    ) -> Result<Vec<String>> {
+        Ok(vec![])
     }
 }

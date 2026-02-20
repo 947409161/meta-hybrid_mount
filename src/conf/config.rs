@@ -24,6 +24,7 @@ pub enum DefaultMode {
     #[default]
     Overlay,
     Magic,
+    Hymofs,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
@@ -32,6 +33,7 @@ pub enum MountMode {
     #[default]
     Overlay,
     Magic,
+    Hymofs,
     Ignore,
 }
 

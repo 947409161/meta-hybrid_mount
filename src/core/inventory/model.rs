@@ -74,6 +74,7 @@ impl ModuleInfo {
         let mode_str = match m.rules.default_mode {
             MountMode::Overlay => "auto",
             MountMode::Magic => "magic",
+            MountMode::Hymofs => "hymofs",
             MountMode::Ignore => "ignore",
         };
 
@@ -99,6 +100,7 @@ pub fn print_list(config: &config::Config) -> Result<()> {
         .overlay_modules
         .iter()
         .chain(state.magic_modules.iter())
+        .chain(state.hymofs_modules.iter())
         .map(|s| s.as_str())
         .collect();
 
@@ -112,7 +114,12 @@ pub fn print_list(config: &config::Config) -> Result<()> {
     Ok(())
 }
 
-pub fn update_description(storage_mode: &str, overlay_count: usize, magic_count: usize) {
+pub fn update_description(
+    storage_mode: &str,
+    overlay_count: usize,
+    magic_count: usize,
+    hymofs_count: usize,
+) {
     let prop_path = Path::new(defs::MODULE_PROP_FILE);
 
     if !prop_path.exists() {
@@ -132,8 +139,8 @@ pub fn update_description(storage_mode: &str, overlay_count: usize, magic_count:
     };
 
     let desc_text = format!(
-        "description=😋 运行中喵～ ({}) {} | Overlay: {} | Magic: {}",
-        mode_str, status_emoji, overlay_count, magic_count
+        "description=😋 运行中喵～ ({}) {} | Overlay: {} | Magic: {} | HymoFS: {}",
+        mode_str, status_emoji, overlay_count, magic_count, hymofs_count
     );
 
     let lines: Vec<String> = match fs::File::open(prop_path) {

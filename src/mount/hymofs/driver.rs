@@ -27,7 +27,7 @@ pub fn load_kernel_module() -> Result<()> {
     let file = File::open(ko_path)?;
     let args = CString::new("hymo_syscall_nr=142")?;
 
-    finit_module(file.as_fd(), &args, 0);
+    finit_module(file.as_fd(), &args, 0)?;
 
     Ok(())
 }
@@ -101,4 +101,3 @@ pub fn apply_hymofs_rules(
 
     Ok(applied_ids)
 }
-

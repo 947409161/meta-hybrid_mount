@@ -24,6 +24,7 @@ fn load_module_rules(module_dir: &Path, module_id: &str, cfg: &config::Config) -
         default_mode: match cfg.default_mode {
             config::DefaultMode::Overlay => MountMode::Overlay,
             config::DefaultMode::Magic => MountMode::Magic,
+            config::DefaultMode::Hymofs => MountMode::Hymofs,
         },
         ..Default::default()
     };

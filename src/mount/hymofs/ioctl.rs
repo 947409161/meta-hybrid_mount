@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::os::fd::{FromRawFd, OwnedFd};
 
 use anyhow::{Result, bail};

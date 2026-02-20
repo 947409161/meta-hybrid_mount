@@ -1,3 +1,4 @@
+pub mod hymofs;
 pub mod magic_mount;
 pub mod node;
 pub mod overlayfs;

@@ -2,7 +2,6 @@ use std::{
     collections::HashSet,
     ffi::CString,
     fs::File,
-    io::{BufReader, Read},
     os::fd::{AsFd, AsRawFd},
     path::{Path, PathBuf},
 };
@@ -38,7 +37,8 @@ pub fn load_kernel_module() -> Result<()> {
         parse_kmi(&version)
     }?;
 
-    let ko_path = Path::new("/data/adb/modules/hybrid_mount/lkm/hymofs_lkm-{kmi}.ko");
+    let ko_path =
+        Path::new("/data/adb/modules/hybrid_mount/lkm/").join(format!("hymofs_lkm-{kmi}.ko"));
     if !ko_path.exists() {
         return Ok(());
     }

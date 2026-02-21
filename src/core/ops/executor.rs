@@ -53,7 +53,8 @@ where
                 }
             }
         }
-        final_overlay_ids.retain(|id| !final_magic_ids.contains(id) && !final_hymofs_ids.contains(id));
+        final_overlay_ids
+            .retain(|id| !final_magic_ids.contains(id) && !final_hymofs_ids.contains(id));
     } else {
         final_magic_ids.extend(plan.overlay_module_ids.clone());
     }

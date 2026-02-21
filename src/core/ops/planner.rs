@@ -153,6 +153,18 @@ pub fn generate(
 ) -> Result<MountPlan> {
     let mut plan = MountPlan::default();
 
+    let hymofs_available = config.hymofs.enable && {
+        let abi = rustix::system::uname()
+            .machine()
+            .to_string_lossy()
+            .into_owned();
+        if abi == "x86_64" || abi == "x86-64" {
+            false
+        } else {
+            crate::mount::hymofs::driver::check_hymofs_status().loaded
+        }
+    };
+
     let mut overlay_groups: HashMap<PathBuf, Vec<PathBuf>> = HashMap::new();
 
     let mut overlay_ids = HashSet::new();
@@ -185,7 +197,12 @@ pub fn generate(
                     continue;
                 }
 
-                let mode = module.rules.get_mode(&dir_name);
+                let mut mode = module.rules.get_mode(&dir_name);
+
+                if matches!(mode, MountMode::Hymofs) && !hymofs_available {
+                    mode = MountMode::Overlay;
+                }
+
                 if matches!(mode, MountMode::Magic) {
                     magic_ids.insert(module.id.clone());
                     continue;

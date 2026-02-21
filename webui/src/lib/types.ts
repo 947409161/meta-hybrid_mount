@@ -1,14 +1,11 @@
-/**
- * Copyright 2026 Hybrid Mount Developers
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
+export type MountMode = "overlay" | "magic" | "ignore" | "hymofs";
+
+export type OverlayMode = "tmpfs" | "ext4" | "erofs";
 
 export interface ModuleRules {
   default_mode: MountMode;
   paths: Record<string, string>;
 }
-
-export type OverlayMode = "tmpfs" | "ext4" | "erofs";
 
 export interface AppConfig {
   moduledir: string;
@@ -18,9 +15,9 @@ export interface AppConfig {
   disable_umount: boolean;
   allow_umount_coexistence: boolean;
   logfile?: string;
+  hymofs_debug?: boolean;
+  hymofs_stealth?: boolean;
 }
-
-export type MountMode = "overlay" | "magic" | "ignore";
 
 export interface Module {
   id: string;
@@ -40,6 +37,13 @@ export interface StorageStatus {
   error?: string;
 }
 
+export interface HymoFSState {
+  loaded: boolean;
+  version: number;
+  active_features: string[];
+  error_msg: string | null;
+}
+
 export interface SystemInfo {
   kernel: string;
   selinux: string;
@@ -48,6 +52,8 @@ export interface SystemInfo {
   zygisksuEnforce?: string;
   supported_overlay_modes?: OverlayMode[];
   tmpfs_xattr_supported?: boolean;
+  abi?: string;
+  hymofs_state?: HymoFSState;
 }
 
 export interface DeviceInfo {
@@ -73,4 +79,5 @@ export interface LanguageOption {
 export interface ModeStats {
   auto: number;
   magic: number;
+  hymofs: number;
 }

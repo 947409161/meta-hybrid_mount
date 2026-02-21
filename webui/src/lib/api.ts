@@ -25,9 +25,7 @@ let ksuExec: KsuModule["exec"] | null = null;
 try {
   const ksu = await import("kernelsu").catch(() => null);
   ksuExec = ksu ? ksu.exec : null;
-} catch {
-  console.warn("KernelSU module not found, defaulting to Mock/Fallback.");
-}
+} catch {}
 
 const shouldUseMock = import.meta.env.DEV || !ksuExec;
 
@@ -64,6 +62,7 @@ interface AppAPI {
   openLink: (url: string) => Promise<void>;
   reboot: () => Promise<void>;
   readLogs: () => Promise<string>;
+  rmmodHymofs: () => Promise<void>;
 }
 
 const RealAPI: AppAPI = {
@@ -85,13 +84,13 @@ const RealAPI: AppAPI = {
     const hexPayload = stringToHex(jsonStr);
     const cmd = `${PATHS.BINARY} save-config --payload ${hexPayload}`;
     const { errno, stderr } = await ksuExec(cmd);
-    if (errno !== 0) throw new Error(`Failed to save config: ${stderr}`);
+    if (errno !== 0) throw new Error(stderr);
   },
   resetConfig: async (): Promise<void> => {
     if (!ksuExec) throw new Error("No KSU environment");
     const cmd = `${PATHS.BINARY} gen-config`;
     const { errno, stderr } = await ksuExec(cmd);
-    if (errno !== 0) throw new Error(`Failed to reset config: ${stderr}`);
+    if (errno !== 0) throw new Error(stderr);
   },
   scanModules: async (_path?: string): Promise<Module[]> => {
     if (!ksuExec) return [];
@@ -112,7 +111,7 @@ const RealAPI: AppAPI = {
         `cat "${DEFAULT_CONFIG.logfile}"`,
       );
       if (errno === 0 && stdout) return stdout;
-    } catch (e) {}
+    } catch {}
     return "";
   },
 
@@ -125,7 +124,7 @@ const RealAPI: AppAPI = {
     const hexPayload = stringToHex(jsonStr);
     const cmd = `${PATHS.BINARY} save-module-rules --module "${moduleId}" --payload ${hexPayload}`;
     const { errno, stderr } = await ksuExec(cmd);
-    if (errno !== 0) throw new Error(`Failed to save rules: ${stderr}`);
+    if (errno !== 0) throw new Error(stderr);
   },
   getStorageUsage: async (): Promise<StorageStatus> => {
     if (!ksuExec) return { type: null };
@@ -174,6 +173,8 @@ const RealAPI: AppAPI = {
           const state = JSON.parse(outState);
           info.mountBase = state.mount_point || "Unknown";
           info.activeMounts = state.active_mounts || [];
+          info.abi = state.abi;
+          info.hymofs_state = state.hymofs_state;
           if (state.zygisksu_enforce !== undefined) {
             info.zygisksuEnforce = state.zygisksu_enforce ? "1" : "0";
           }
@@ -232,6 +233,11 @@ const RealAPI: AppAPI = {
   reboot: async (): Promise<void> => {
     if (!ksuExec) return;
     await ksuExec("reboot");
+  },
+  rmmodHymofs: async (): Promise<void> => {
+    if (!ksuExec) throw new Error("No KSU environment");
+    const { errno, stderr } = await ksuExec("rmmod hymofs");
+    if (errno !== 0) throw new Error(stderr);
   },
 };
 

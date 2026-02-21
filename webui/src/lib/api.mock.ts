@@ -16,13 +16,11 @@ export const MockAPI = {
     await delay(300);
     return { ...DEFAULT_CONFIG };
   },
-  async saveConfig(config: AppConfig): Promise<void> {
+  async saveConfig(_config: AppConfig): Promise<void> {
     await delay(500);
-    console.log("[Mock] Config saved:", config);
   },
   async resetConfig(): Promise<void> {
     await delay(500);
-    console.log("[Mock] Config reset to defaults");
   },
   async scanModules(_dir: string): Promise<Module[]> {
     await delay(600);
@@ -32,7 +30,7 @@ export const MockAPI = {
         name: "Example Module",
         version: "1.0.0",
         author: "Developer",
-        description: "This is a mock module for testing.",
+        description: "Mock module",
         mode: "magic",
         is_mounted: true,
         rules: {
@@ -54,23 +52,22 @@ export const MockAPI = {
         },
       },
       {
-        id: "disabled_module",
-        name: "Unmounted Module",
-        version: "0.1",
-        author: "Tester",
-        description: "This module is not mounted.",
-        mode: "ignore",
-        is_mounted: false,
+        id: "hymofs_module_3",
+        name: "HymoFS Module",
+        version: "1.2",
+        author: "Dev",
+        description: "A hymofs module.",
+        mode: "hymofs",
+        is_mounted: true,
         rules: {
-          default_mode: "ignore",
+          default_mode: "hymofs",
           paths: {},
         },
       },
     ];
   },
-  async saveModuleRules(moduleId: string, rules: ModuleRules): Promise<void> {
+  async saveModuleRules(_moduleId: string, _rules: ModuleRules): Promise<void> {
     await delay(400);
-    console.log(`[Mock] Rules saved for ${moduleId}:`, rules);
   },
   async getDeviceStatus(): Promise<DeviceInfo> {
     await delay(300);
@@ -100,6 +97,16 @@ export const MockAPI = {
       activeMounts: ["system", "product"],
       zygisksuEnforce: "1",
       tmpfs_xattr_supported: false,
+      abi: "aarch64",
+      hymofs_state: {
+        loaded: true,
+        version: 12,
+        active_features: ["debug", "stealth"],
+        error_msg: null,
+      },
     };
+  },
+  async rmmodHymofs(): Promise<void> {
+    await delay(500);
   },
 };

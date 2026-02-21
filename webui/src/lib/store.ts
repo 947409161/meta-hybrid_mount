@@ -83,11 +83,12 @@ const createGlobalStore = () => {
   );
 
   const modeStats = createMemo((): ModeStats => {
-    const stats = { auto: 0, magic: 0 };
+    const stats = { auto: 0, magic: 0, hymofs: 0 };
     modules().forEach((m) => {
       if (!m.is_mounted) return;
-      if (m.mode === "auto") stats.auto++;
+      if (m.mode === "auto" || m.mode === "overlay") stats.auto++;
       else if (m.mode === "magic") stats.magic++;
+      else if (m.mode === "hymofs") stats.hymofs++;
     });
     return stats;
   });
@@ -230,6 +231,16 @@ const createGlobalStore = () => {
     setLoadingStatus(false);
   }
 
+  async function rmmodHymofs() {
+    try {
+      await API.rmmodHymofs();
+      showToast(L().hymofs?.rmmodSuccess || "HymoFS Unloaded", "success");
+      await loadStatus();
+    } catch (e) {
+      showToast(L().hymofs?.rmmodError || "Failed to unload HymoFS", "error");
+    }
+  }
+
   return {
     get lang() {
       return lang();
@@ -295,6 +306,7 @@ const createGlobalStore = () => {
     },
 
     loadStatus,
+    rmmodHymofs,
 
     get loading() {
       return {

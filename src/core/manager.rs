@@ -183,6 +183,8 @@ impl MountController<Executed> {
         active_mounts.sort();
         active_mounts.dedup();
 
+        let hymofs_state = crate::mount::hymofs::driver::check_hymofs_status();
+
         let state = state::RuntimeState::new(
             self.state.handle.mode().to_string(),
             self.state.handle.mount_point().to_path_buf(),
@@ -190,6 +192,7 @@ impl MountController<Executed> {
             self.state.result.magic_module_ids,
             self.state.result.hymofs_module_ids,
             active_mounts,
+            hymofs_state,
         );
 
         let _ = state.save();

@@ -7,15 +7,18 @@ use std::{
 };
 
 use anyhow::{Context, Result};
+use log::{error, info, warn};
 use regex_lite::Regex;
 use rustix::system::finit_module;
 use walkdir::WalkDir;
 
 use crate::{
     conf::config,
+    core::state::HymofsState,
     mount::hymofs::ioctl::{
         HymoSyscallArg, get_hymofs_fd, hymo_ioc_add_merge_rule, hymo_ioc_add_rule,
-        hymo_ioc_set_enabled,
+        hymo_ioc_get_features, hymo_ioc_get_version, hymo_ioc_set_debug, hymo_ioc_set_enabled,
+        hymo_ioc_set_mirror_path, hymo_ioc_set_stealth,
     },
 };
 
@@ -32,41 +35,127 @@ fn parse_kmi(version: &str) -> Result<String> {
 pub fn load_kernel_module() -> Result<()> {
     let kmi = {
         let uname = rustix::system::uname();
-
         let version = uname.release().to_string_lossy();
         parse_kmi(&version)
     }?;
 
     let ko_path =
-        Path::new("/data/adb/modules/hybrid_mount/lkm/").join(format!("hymofs_lkm-{kmi}.ko"));
+        Path::new("/data/adb/modules/hybrid_mount/lkm/").join(format!("{}_hymofs_lkm.ko", kmi));
+
     if !ko_path.exists() {
+        warn!("HymoFS LKM not found at {:?}", ko_path);
         return Ok(());
     }
 
-    let file = File::open(ko_path)?;
+    info!("Loading HymoFS LKM from {:?}", ko_path);
+    let file = File::open(&ko_path)?;
     let args = CString::new("hymo_syscall_nr=142")?;
 
-    finit_module(file.as_fd(), &args, 0)?;
+    match finit_module(file.as_fd(), &args, 0) {
+        Ok(_) => info!("HymoFS LKM loaded successfully"),
+        Err(e) => error!("Failed to load HymoFS LKM: {}", e),
+    }
 
     Ok(())
 }
 
+pub fn check_hymofs_status() -> HymofsState {
+    let mut state = HymofsState::default();
+
+    let fd = match get_hymofs_fd(142) {
+        Ok(fd) => fd,
+        Err(e) => {
+            state.loaded = false;
+            state.error_msg = Some(format!("Failed to get fd: {}", e));
+            return state;
+        }
+    };
+
+    let raw_fd = fd.as_raw_fd();
+    let mut version: i32 = 0;
+
+    unsafe {
+        match hymo_ioc_get_version(raw_fd, &mut version) {
+            Ok(_) => {
+                state.loaded = true;
+                state.version = version;
+            }
+            Err(e) => {
+                state.loaded = false;
+                state.error_msg = Some(format!("Failed to get version: {}", e));
+            }
+        }
+
+        let mut features: i32 = 0;
+        if hymo_ioc_get_features(raw_fd, &mut features).is_ok() {
+            let mut active = Vec::new();
+            if features & 1 != 0 {
+                active.push("kstat_spoof".to_string());
+            }
+            if features & 2 != 0 {
+                active.push("uname_spoof".to_string());
+            }
+            if features & 4 != 0 {
+                active.push("cmdline_spoof".to_string());
+            }
+            if features & 16 != 0 {
+                active.push("selinux_bypass".to_string());
+            }
+            if features & 32 != 0 {
+                active.push("merge_dir".to_string());
+            }
+            state.active_features = active;
+        }
+    }
+
+    state
+}
+
 pub fn apply_hymofs_rules(
     ids: &HashSet<String>,
-    _config: &config::Config,
+    config: &config::Config,
     storage_root: &Path,
 ) -> Result<Vec<String>> {
     let fd = get_hymofs_fd(142).context("Failed to get hymofs fd")?;
     let raw_fd = fd.as_raw_fd();
+
+    info!("Applying HymoFS configuration");
+
+    unsafe {
+        let debug_val = if config.hymofs.debug { 1 } else { 0 };
+        if let Err(e) = hymo_ioc_set_debug(raw_fd, &debug_val) {
+            error!("Failed to set HymoFS debug mode: {}", e);
+        }
+
+        let stealth_val = if config.hymofs.stealth { 1 } else { 0 };
+        if let Err(e) = hymo_ioc_set_stealth(raw_fd, &stealth_val) {
+            error!("Failed to set HymoFS stealth mode: {}", e);
+        }
+
+        if !config.hymofs.mirror_path.is_empty() {
+            if let Ok(c_path) = CString::new(config.hymofs.mirror_path.as_str()) {
+                let arg = HymoSyscallArg {
+                    src: c_path.as_ptr(),
+                    target: std::ptr::null(),
+                    type_: 0,
+                };
+                if let Err(e) = hymo_ioc_set_mirror_path(raw_fd, &arg) {
+                    error!("Failed to set HymoFS mirror path: {}", e);
+                }
+            }
+        }
+    }
 
     let mut applied_ids = Vec::new();
 
     for id in ids {
         let module_dir = storage_root.join(id);
         if !module_dir.exists() {
+            warn!("Module directory not found: {:?}", module_dir);
             continue;
         }
 
+        info!("Processing rules for module: {}", id);
         let mut success = true;
 
         for entry in WalkDir::new(&module_dir).min_depth(1).into_iter().flatten() {
@@ -80,6 +169,7 @@ pub fn apply_hymofs_rules(
             let src_c = match CString::new(path.to_string_lossy().as_bytes()) {
                 Ok(c) => c,
                 Err(_) => {
+                    error!("Invalid source path encoding: {:?}", path);
                     success = false;
                     continue;
                 }
@@ -87,6 +177,7 @@ pub fn apply_hymofs_rules(
             let target_c = match CString::new(target_path.to_string_lossy().as_bytes()) {
                 Ok(c) => c,
                 Err(_) => {
+                    error!("Invalid target path encoding: {:?}", target_path);
                     success = false;
                     continue;
                 }
@@ -100,22 +191,36 @@ pub fn apply_hymofs_rules(
 
             unsafe {
                 if path.is_dir() {
-                    if hymo_ioc_add_merge_rule(raw_fd, &arg).is_err() {
+                    if let Err(e) = hymo_ioc_add_merge_rule(raw_fd, &arg) {
+                        error!("Failed to add merge rule for {:?}: {}", path, e);
                         success = false;
+                    } else {
+                        info!("Added merge rule: {:?}", path);
                     }
-                } else if hymo_ioc_add_rule(raw_fd, &arg).is_err() {
+                } else if let Err(e) = hymo_ioc_add_rule(raw_fd, &arg) {
+                    error!("Failed to add file rule for {:?}: {}", path, e);
                     success = false;
+                } else {
+                    info!("Added file rule: {:?}", path);
                 }
             }
         }
 
         if success {
+            info!("Successfully applied all rules for module: {}", id);
             applied_ids.push(id.clone());
+        } else {
+            warn!("Partial or failed rule application for module: {}", id);
         }
     }
 
     unsafe {
-        let _ = hymo_ioc_set_enabled(raw_fd, &1);
+        let enabled_val = if config.hymofs.enable { 1 } else { 0 };
+        if let Err(e) = hymo_ioc_set_enabled(raw_fd, &enabled_val) {
+            error!("Failed to enable HymoFS: {}", e);
+        } else {
+            info!("HymoFS enabled state set to: {}", config.hymofs.enable);
+        }
     }
 
     Ok(applied_ids)

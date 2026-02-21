@@ -80,6 +80,9 @@ fn main() -> Result<()> {
             Commands::Modules => cli_handlers::handle_modules(&cli)?,
             Commands::Conflicts => cli_handlers::handle_conflicts(&cli)?,
             Commands::Diagnostics => cli_handlers::handle_diagnostics(&cli)?,
+            Some(cli::Commands::Hymofs { action }) => {
+                cli_handlers::handle_hymofs(&action)?;
+            }
         }
 
         return Ok(());

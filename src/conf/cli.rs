@@ -1,6 +1,3 @@
-// Copyright 2026 Hybrid Mount Developers
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
@@ -44,4 +41,47 @@ pub enum Commands {
     Modules,
     Conflicts,
     Diagnostics,
+    #[command(name = "hymofs")]
+    Hymofs {
+        #[command(subcommand)]
+        action: HymofsAction,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum HymofsAction {
+    Status,
+    Add {
+        src: String,
+        target: String,
+        #[arg(long)]
+        is_dir: bool,
+    },
+    AddMerge {
+        src: String,
+        target: String,
+    },
+    Del {
+        src: String,
+    },
+    Hide {
+        src: String,
+    },
+    HideXattr {
+        src: String,
+    },
+    Clear,
+    List,
+    Debug {
+        #[arg(long)]
+        enable: bool,
+    },
+    Stealth {
+        #[arg(long)]
+        enable: bool,
+    },
+    Enable {
+        #[arg(long)]
+        enable: bool,
+    },
 }

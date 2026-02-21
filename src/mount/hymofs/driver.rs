@@ -132,16 +132,16 @@ pub fn apply_hymofs_rules(
             error!("Failed to set HymoFS stealth mode: {}", e);
         }
 
-        if !config.hymofs.mirror_path.is_empty() {
-            if let Ok(c_path) = CString::new(config.hymofs.mirror_path.as_str()) {
-                let arg = HymoSyscallArg {
-                    src: c_path.as_ptr(),
-                    target: std::ptr::null(),
-                    type_: 0,
-                };
-                if let Err(e) = hymo_ioc_set_mirror_path(raw_fd, &arg) {
-                    error!("Failed to set HymoFS mirror path: {}", e);
-                }
+        if !config.hymofs.mirror_path.is_empty()
+            && let Ok(c_path) = CString::new(config.hymofs.mirror_path.as_str())
+        {
+            let arg = HymoSyscallArg {
+                src: c_path.as_ptr(),
+                target: std::ptr::null(),
+                type_: 0,
+            };
+            if let Err(e) = hymo_ioc_set_mirror_path(raw_fd, &arg) {
+                error!("Failed to set HymoFS mirror path: {}", e);
             }
         }
     }

@@ -263,7 +263,7 @@ pub fn handle_hymofs(action: &HymofsAction) -> Result<()> {
             unsafe {
                 hymo_ioc_list_rules(raw_fd, &mut arg).context("ioctl hymo_ioc_list_rules failed")?
             };
-            let s = String::from_utf8_lossy(&buf[..arg.size as usize]);
+            let s = String::from_utf8_lossy(&buf[..arg.size]);
             println!("{}", s);
         }
         HymofsAction::Debug { enable } => {

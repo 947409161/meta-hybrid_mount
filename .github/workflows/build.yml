@@ -66,6 +66,12 @@ jobs:
           sudo apt install -y gcc-multilib
           cargo install cargo-ndk --locked
 
+      - name: Download HymoFS
+        run: |
+          wget https://github.com/Hybrid-Mount/HymoFS/releases/latest/download/hymofs-lkm-all.zip
+          unzip hymofs-lkm-all.zip -d module/lkm
+          rm module/lkm/hymofs_lkm-*.stripped.ko
+
       - name: Build All
         run: |
           cargo xtask build --ci

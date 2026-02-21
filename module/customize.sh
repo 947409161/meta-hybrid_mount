@@ -60,7 +60,7 @@ KEY_volume_detect() {
   done
   ui_print "- Configured mode: $chosen_mode"
   sed -i '/default_mode/d' "$BASE_DIR/config.toml"
-  echo "default_mode = \"$chosen_mode\"" >> "$BASE_DIR/config.toml"
+  echo "default_mode = \"$chosen_mode\"" >>"$BASE_DIR/config.toml"
 }
 
 if [ ! -f "$BASE_DIR/config.toml" ]; then
@@ -77,3 +77,4 @@ set_perm_recursive "$MODPATH" 0 0 0755 0644
 set_perm "$BIN_TARGET" 0 0 0755
 set_perm "$MODPATH/tools/mkfs.erofs" 0 0 0755
 ui_print "- Installation complete"
+

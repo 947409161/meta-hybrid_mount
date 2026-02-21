@@ -2,11 +2,13 @@ use std::{
     collections::HashSet,
     ffi::CString,
     fs::File,
+    io::{BufReader, Read},
     os::fd::{AsFd, AsRawFd},
     path::{Path, PathBuf},
 };
 
 use anyhow::{Context, Result};
+use regex_lite::Regex;
 use rustix::system::finit_module;
 use walkdir::WalkDir;
 
@@ -18,8 +20,25 @@ use crate::{
     },
 };
 
+fn parse_kmi(version: &str) -> Result<String> {
+    let re = Regex::new(r"(.* )?(\d+\.\d+)(\S+)?(android\d+)(.*)")?;
+    let cap = re
+        .captures(version)
+        .ok_or_else(|| anyhow::anyhow!("Failed to get KMI from boot/modules"))?;
+    let android_version = cap.get(4).map_or("", |m| m.as_str());
+    let kernel_version = cap.get(2).map_or("", |m| m.as_str());
+    Ok(format!("{android_version}-{kernel_version}"))
+}
+
 pub fn load_kernel_module() -> Result<()> {
-    let ko_path = Path::new("/data/adb/modules/hybrid_mount/hymofs_lkm.ko");
+    let kmi = {
+        let uname = rustix::system::uname();
+
+        let version = uname.release().to_string_lossy();
+        parse_kmi(&version)
+    }?;
+
+    let ko_path = Path::new("/data/adb/modules/hybrid_mount/lkm/hymofs_lkm-{kmi}.ko");
     if !ko_path.exists() {
         return Ok(());
     }

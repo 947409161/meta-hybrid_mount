@@ -1,8 +1,3 @@
-/**
- * Copyright 2026 Hybrid Mount Authors
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 import { createSignal, createMemo, onMount, Show, For } from "solid-js";
 import { store } from "../lib/store";
 import { ICONS } from "../lib/constants";
@@ -18,7 +13,7 @@ import "@material/web/icon/icon.js";
 export default function ModulesTab() {
   const [searchQuery, setSearchQuery] = createSignal("");
   const [filterType, setFilterType] = createSignal("all");
-  const [showUnmounted, setShowUnmounted] = createSignal(false); // 默认不显示未挂载
+  const [showUnmounted, setShowUnmounted] = createSignal(false);
   const [expandedId, setExpandedId] = createSignal<string | null>(null);
   const [initialRulesSnapshot, setInitialRulesSnapshot] = createSignal<
     Record<string, string>
@@ -70,7 +65,6 @@ export default function ModulesTab() {
         store.L.modules?.saveSuccess || "Saved successfully",
         "success",
       );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       store.showToast(e.message || "Failed to save", "error");
     } finally {
@@ -107,12 +101,14 @@ export default function ModulesTab() {
     const m = store.L.modules?.modes;
     if (!mod.is_mounted) return m?.none ?? "Unmounted";
     if (mod.mode === "magic") return m?.magic ?? "Magic";
+    if (mod.mode === "hymofs") return m?.hymofs ?? "HymoFS";
     return m?.auto ?? "Overlay";
   }
 
   function getModeClass(mod: Module) {
     if (!mod.is_mounted) return "mode-ignore";
     if (mod.mode === "magic") return "mode-magic";
+    if (mod.mode === "hymofs") return "mode-hymofs";
     return "mode-auto";
   }
 
@@ -177,6 +173,9 @@ export default function ModulesTab() {
                 <option value="all">{store.L.modules?.filterAll}</option>
                 <option value="auto">Overlay</option>
                 <option value="magic">Magic</option>
+                <Show when={store.systemInfo?.abi === "aarch64"}>
+                  <option value="hymofs">HymoFS</option>
+                </Show>
               </select>
             </div>
           </div>
@@ -268,6 +267,20 @@ export default function ModulesTab() {
                                 </span>
                                 <span class="opt-sub">Compat</span>
                               </button>
+                              <Show when={store.systemInfo?.abi === "aarch64"}>
+                                <button
+                                  class={`strategy-option ${mod.rules.default_mode === "hymofs" ? "selected" : ""}`}
+                                  onClick={() =>
+                                    updateDefaultMode(mod, "hymofs")
+                                  }
+                                >
+                                  <span class="opt-title">
+                                    {store.L.modules?.modes?.short?.hymofs ??
+                                      "HymoFS"}
+                                  </span>
+                                  <span class="opt-sub">Isolate</span>
+                                </button>
+                              </Show>
                               <button
                                 class={`strategy-option ${mod.rules.default_mode === "ignore" ? "selected" : ""}`}
                                 onClick={() => updateDefaultMode(mod, "ignore")}

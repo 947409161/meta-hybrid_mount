@@ -18,10 +18,16 @@ export default function NavBar(props: Props) {
     { id: "status", icon: ICONS.home },
     { id: "config", icon: ICONS.settings },
     { id: "modules", icon: ICONS.modules },
+    { id: "hymofs", icon: ICONS.hymofs },
     { id: "info", icon: ICONS.info },
   ];
 
-  const visibleTabs = createMemo(() => ALL_TABS);
+  const visibleTabs = createMemo(() => {
+    if (store.systemInfo?.abi === "aarch64") {
+      return ALL_TABS;
+    }
+    return ALL_TABS.filter((t) => t.id !== "hymofs");
+  });
 
   createEffect(() => {
     const active = props.activeTab;
@@ -66,7 +72,7 @@ export default function NavBar(props: Props) {
               </md-icon>
             </div>
             <span class="label">
-              {store.L.tabs[tab.id as keyof typeof store.L.tabs] || tab.id}
+              {store.L.tabs?.[tab.id as keyof typeof store.L.tabs] || tab.id}
             </span>
           </button>
         )}

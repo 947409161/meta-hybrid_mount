@@ -1,0 +1,115 @@
+.hymofs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 24px;
+}
+
+.status-card,
+.config-card,
+.action-card {
+  background-color: var(--md-sys-color-surface-container-low);
+  border-radius: 24px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--md-sys-color-primary);
+}
+
+.card-header md-icon svg {
+  fill: currentColor;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  padding-bottom: 12px;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.info-key {
+  font-size: 14px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.info-val {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-ref-typeface-mono);
+}
+
+.info-val.active {
+  color: var(--md-sys-color-primary);
+}
+
+.info-val.inactive {
+  color: var(--md-sys-color-error);
+}
+
+md-list {
+  border-radius: 16px;
+  overflow: hidden;
+  --md-list-container-color: transparent;
+}
+
+.danger-btn {
+  --md-filled-tonal-button-container-color: var(--md-sys-color-error-container);
+  --md-filled-tonal-button-label-text-color: var(
+    --md-sys-color-on-error-container
+  );
+  --md-filled-tonal-button-icon-color: var(--md-sys-color-on-error-container);
+  width: 100%;
+}
+
+.unsupported-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--md-sys-color-on-surface-variant);
+  gap: 16px;
+  background-color: var(--md-sys-color-surface-container);
+  border-radius: 24px;
+}
+
+.large-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+}
+
+.large-icon svg {
+  width: 48px;
+  height: 48px;
+  fill: currentColor;
+}
+
+.transparent-scrim {
+  --md-dialog-scrim-color: transparent;
+  --md-sys-color-scrim: transparent;
+}
+
+.spacer {
+  flex: 1;
+}

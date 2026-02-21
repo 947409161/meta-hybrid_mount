@@ -1,8 +1,3 @@
-/**
- * Copyright 2026 Hybrid Mount Developers
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 import { createMemo, createSignal, onMount, Show, For } from "solid-js";
 import { store } from "../lib/store";
 import { ICONS } from "../lib/constants";
@@ -35,19 +30,23 @@ export default function StatusTab() {
 
   function getModeDisplayName(mode: string | null | undefined) {
     if (!mode) return "Unknown";
-    // @ts-ignore
     const key = `mode_${mode}`;
-    // @ts-ignore
     return store.L.config?.[key] || mode.toUpperCase();
   }
 
   const modeDistribution = createMemo(() => {
     const stats = store.modeStats;
-    const total = (stats?.auto || 0) + (stats?.magic || 0);
-    if (total === 0) return { auto: 0, magic: 0 };
+    const isAarch64 = store.systemInfo?.abi === "aarch64";
+    const auto = stats?.auto || 0;
+    const magic = stats?.magic || 0;
+    const hymofs = isAarch64 ? stats?.hymofs || 0 : 0;
+    const total = auto + magic + hymofs;
+
+    if (total === 0) return { auto: 0, magic: 0, hymofs: 0 };
     return {
-      auto: (stats.auto / total) * 100,
-      magic: (stats.magic / total) * 100,
+      auto: (auto / total) * 100,
+      magic: (magic / total) * 100,
+      hymofs: (hymofs / total) * 100,
     };
   });
 
@@ -178,6 +177,12 @@ export default function StatusTab() {
                 class="bar-segment bar-magic"
                 style={{ width: `${modeDistribution().magic}%` }}
               ></div>
+              <Show when={store.systemInfo?.abi === "aarch64"}>
+                <div
+                  class="bar-segment bar-hymofs"
+                  style={{ width: `${modeDistribution().hymofs}%` }}
+                ></div>
+              </Show>
             </div>
             <div class="stats-legend">
               <div class="legend-item">
@@ -188,6 +193,12 @@ export default function StatusTab() {
                 <div class="legend-dot dot-magic"></div>
                 <span>Magic: {store.modeStats?.magic || 0}</span>
               </div>
+              <Show when={store.systemInfo?.abi === "aarch64"}>
+                <div class="legend-item">
+                  <div class="legend-dot dot-hymofs"></div>
+                  <span>HymoFS: {store.modeStats?.hymofs || 0}</span>
+                </div>
+              </Show>
             </div>
           </Show>
         </div>
@@ -216,6 +227,16 @@ export default function StatusTab() {
               fallback={<Skeleton width="60px" height="16px" />}
             >
               <span class="info-val">{store.systemInfo?.selinux || "-"}</span>
+            </Show>
+          </div>
+
+          <div class="info-row">
+            <span class="info-key">{store.L?.status?.abi ?? "ABI"}</span>
+            <Show
+              when={!store.loading.status}
+              fallback={<Skeleton width="80px" height="16px" />}
+            >
+              <span class="info-val">{store.systemInfo?.abi || "-"}</span>
             </Show>
           </div>
 

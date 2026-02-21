@@ -1,8 +1,3 @@
-/**
- * Copyright 2026 Hybrid Mount Developers
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 import { createSignal, createEffect, createMemo, Show, For } from "solid-js";
 import { store } from "../lib/store";
 import { ICONS } from "../lib/constants";
@@ -46,18 +41,6 @@ export default function ConfigTab() {
     }
   });
 
-  createEffect(() => {
-    if (
-      store.systemInfo?.zygisksuEnforce &&
-      store.systemInfo.zygisksuEnforce !== "0" &&
-      !store.config.allow_umount_coexistence
-    ) {
-      if (!store.config.disable_umount) {
-        updateConfig("disable_umount", true);
-      }
-    }
-  });
-
   function updateConfig<K extends keyof AppConfig>(
     key: K,
     value: AppConfig[K],
@@ -91,20 +74,6 @@ export default function ConfigTab() {
   function toggle(key: keyof AppConfig) {
     const currentVal = store.config[key] as boolean;
     const newVal = !currentVal;
-
-    if (key === "disable_umount") {
-      if (
-        store.systemInfo?.zygisksuEnforce &&
-        store.systemInfo.zygisksuEnforce !== "0" &&
-        !store.config.allow_umount_coexistence
-      ) {
-        store.showToast(
-          store.L.config?.coexistenceRequired || "Coexistence required",
-          "error",
-        );
-        return;
-      }
-    }
 
     updateConfig(key, newVal);
 
@@ -353,35 +322,6 @@ export default function ConfigTab() {
                 <span class="tile-label">{store.L.config.disableUmount}</span>
               </div>
             </button>
-
-            <Show
-              when={
-                store.systemInfo?.zygisksuEnforce &&
-                store.systemInfo.zygisksuEnforce !== "0"
-              }
-            >
-              <button
-                class={`option-tile clickable error ${store.config.allow_umount_coexistence ? "active" : ""}`}
-                onClick={() => toggle("allow_umount_coexistence")}
-              >
-                <md-ripple></md-ripple>
-                <div class="tile-top">
-                  <div class="tile-icon">
-                    <md-icon>
-                      <svg viewBox="0 0 24 24">
-                        <path d={ICONS.shield} />
-                      </svg>
-                    </md-icon>
-                  </div>
-                </div>
-                <div class="tile-bottom">
-                  <span class="tile-label">
-                    {store.L.config?.allowUmountCoexistence ||
-                      "Allow Coexistence"}
-                  </span>
-                </div>
-              </button>
-            </Show>
           </div>
         </section>
 

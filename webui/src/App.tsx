@@ -1,8 +1,3 @@
-/**
- * Copyright 2026 Hybrid Mount Developers
- * SPDX-License-Identifier: GPL-3.0-or-later
- */
-
 import { createSignal, createMemo, onMount, Show } from "solid-js";
 import { store } from "./lib/store";
 import TopBar from "./components/TopBar.tsx";
@@ -12,6 +7,7 @@ import StatusTab from "./routes/StatusTab.tsx";
 import ConfigTab from "./routes/ConfigTab.tsx";
 import ModulesTab from "./routes/ModulesTab.tsx";
 import InfoTab from "./routes/InfoTab.tsx";
+import HymoFSTab from "./routes/HymoFSTab.tsx";
 
 export default function App() {
   const [activeTab, setActiveTab] = createSignal("status");
@@ -26,7 +22,12 @@ export default function App() {
   let touchStartY = 0;
 
   const visibleTabs = createMemo(() => {
-    return ["status", "config", "modules", "info"];
+    const tabs = ["status", "config", "modules"];
+    if (store.systemInfo?.abi === "aarch64") {
+      tabs.push("hymofs");
+    }
+    tabs.push("info");
+    return tabs;
   });
 
   const baseTranslateX = createMemo(() => {
@@ -156,6 +157,16 @@ export default function App() {
                 <ModulesTab />
               </div>
             </div>
+            <Show when={store.systemInfo?.abi === "aarch64"}>
+              <div
+                class="swipe-page"
+                style={{ width: `${100 / visibleTabs().length}%` }}
+              >
+                <div class="page-scroller">
+                  <HymoFSTab />
+                </div>
+              </div>
+            </Show>
             <div
               class="swipe-page"
               style={{ width: `${100 / visibleTabs().length}%` }}

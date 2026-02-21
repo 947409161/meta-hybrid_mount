@@ -59,7 +59,6 @@ pub struct HymofsConfig {
     pub enable: bool,
     pub debug: bool,
     pub stealth: bool,
-    pub mirror_path: String,
     pub hide_overlay_xattrs: bool,
 }
 
@@ -69,7 +68,6 @@ impl Default for HymofsConfig {
             enable: true,
             debug: false,
             stealth: true,
-            mirror_path: String::from("/dev/hymo_mirror"),
             hide_overlay_xattrs: false,
         }
     }

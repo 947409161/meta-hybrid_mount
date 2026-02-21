@@ -132,9 +132,12 @@ pub fn apply_hymofs_rules(
             error!("Failed to set HymoFS stealth mode: {}", e);
         }
 
-        if !config.hymofs.mirror_path.is_empty()
-            && let Ok(c_path) = CString::new(config.hymofs.mirror_path.as_str())
-        {
+        let mirror_dir = storage_root.join("hymofs");
+        if let Err(e) = std::fs::create_dir_all(&mirror_dir) {
+            error!("Failed to create hymofs mirror dir: {}", e);
+        }
+
+        if let Ok(c_path) = CString::new(mirror_dir.to_string_lossy().as_bytes()) {
             let arg = HymoSyscallArg {
                 src: c_path.as_ptr(),
                 target: std::ptr::null(),

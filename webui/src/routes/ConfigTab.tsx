@@ -322,6 +322,26 @@ export default function ConfigTab() {
                 <span class="tile-label">{store.L.config.disableUmount}</span>
               </div>
             </button>
+            <button
+              class={`option-tile clickable tertiary ${store.config.hymofs_enable ? "active" : ""}`}
+              onClick={() => toggle("hymofs_enable")}
+            >
+              <md-ripple></md-ripple>
+              <div class="tile-top">
+                <div class="tile-icon">
+                  <md-icon>
+                    <svg viewBox="0 0 24 24">
+                      <path d={ICONS.hymofs} />
+                    </svg>
+                  </md-icon>
+                </div>
+              </div>
+              <div class="tile-bottom">
+                <span class="tile-label">
+                  {store.L.config?.hymofsEnable || "HymoFS"}
+                </span>
+              </div>
+            </button>
           </div>
         </section>
 

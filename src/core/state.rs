@@ -11,6 +11,7 @@ use crate::{defs, sys::fs::xattr};
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct HymofsState {
+    pub enabled: bool,
     pub loaded: bool,
     pub version: i32,
     pub active_features: Vec<String>,

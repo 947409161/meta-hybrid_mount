@@ -23,7 +23,10 @@ export default function App() {
 
   const visibleTabs = createMemo(() => {
     const tabs = ["status", "config", "modules"];
-    if (store.systemInfo?.abi === "aarch64") {
+    if (
+      store.systemInfo?.abi === "aarch64" &&
+      store.systemInfo?.hymofs_state?.enabled
+    ) {
       tabs.push("hymofs");
     }
     tabs.push("info");
@@ -157,7 +160,12 @@ export default function App() {
                 <ModulesTab />
               </div>
             </div>
-            <Show when={store.systemInfo?.abi === "aarch64"}>
+            <Show
+              when={
+                store.systemInfo?.abi === "aarch64" &&
+                store.systemInfo?.hymofs_state?.enabled
+              }
+            >
               <div
                 class="swipe-page"
                 style={{ width: `${100 / visibleTabs().length}%` }}

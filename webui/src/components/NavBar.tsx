@@ -23,7 +23,10 @@ export default function NavBar(props: Props) {
   ];
 
   const visibleTabs = createMemo(() => {
-    if (store.systemInfo?.abi === "aarch64") {
+    if (
+      store.systemInfo?.abi === "aarch64" &&
+      store.systemInfo?.hymofs_state?.enabled
+    ) {
       return ALL_TABS;
     }
     return ALL_TABS.filter((t) => t.id !== "hymofs");

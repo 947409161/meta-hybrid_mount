@@ -17,6 +17,7 @@ export interface AppConfig {
   logfile?: string;
   hymofs_debug?: boolean;
   hymofs_stealth?: boolean;
+  hymofs_enable?: boolean;
 }
 
 export interface Module {
@@ -38,6 +39,7 @@ export interface StorageStatus {
 }
 
 export interface HymoFSState {
+  enabled: boolean;
   loaded: boolean;
   version: number;
   active_features: string[];

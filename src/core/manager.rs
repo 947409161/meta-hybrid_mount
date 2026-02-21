@@ -60,7 +60,13 @@ impl MountController<Init> {
         mnt_base: &Path,
         img_path: &Path,
     ) -> Result<MountController<StorageReady>> {
-        let _ = crate::mount::hymofs::driver::load_kernel_module();
+        let abi = rustix::system::uname()
+            .machine()
+            .to_string_lossy()
+            .into_owned();
+        if self.config.hymofs.enable && abi != "x86_64" && abi != "x86-64" {
+            let _ = crate::mount::hymofs::driver::load_kernel_module();
+        }
 
         let handle = storage::setup(
             mnt_base,
@@ -183,7 +189,15 @@ impl MountController<Executed> {
         active_mounts.sort();
         active_mounts.dedup();
 
-        let hymofs_state = crate::mount::hymofs::driver::check_hymofs_status();
+        let abi = rustix::system::uname()
+            .machine()
+            .to_string_lossy()
+            .into_owned();
+        let hymofs_state = if abi != "x86_64" && abi != "x86-64" {
+            crate::mount::hymofs::driver::check_hymofs_status()
+        } else {
+            crate::core::state::HymofsState::default()
+        };
 
         let state = state::RuntimeState::new(
             self.state.handle.mode().to_string(),

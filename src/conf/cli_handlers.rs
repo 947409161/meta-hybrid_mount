@@ -176,6 +176,14 @@ pub fn handle_diagnostics(cli: &Cli) -> Result<()> {
 }
 
 pub fn handle_hymofs(action: &HymofsAction) -> Result<()> {
+    let abi = rustix::system::uname()
+        .machine()
+        .to_string_lossy()
+        .into_owned();
+    if abi == "x86_64" || abi == "x86-64" {
+        anyhow::bail!("HymoFS operations are not supported on x86_64 architecture.");
+    }
+
     if matches!(action, HymofsAction::Status) {
         let status = check_hymofs_status();
         let json = serde_json::to_string_pretty(&status).context("Failed to serialize status")?;

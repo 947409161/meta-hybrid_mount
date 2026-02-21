@@ -21,6 +21,8 @@ pub struct HymofsState {
 pub struct RuntimeState {
     pub timestamp: u64,
     pub pid: u32,
+    #[serde(default)]
+    pub abi: String,
     pub storage_mode: String,
     pub mount_point: PathBuf,
     pub overlay_modules: Vec<String>,
@@ -55,11 +57,17 @@ impl RuntimeState {
 
         let pid = std::process::id();
 
+        let abi = rustix::system::uname()
+            .machine()
+            .to_string_lossy()
+            .into_owned();
+
         let tmpfs_xattr_supported = xattr::is_overlay_xattr_supported().unwrap_or(false);
 
         Self {
             timestamp,
             pid,
+            abi,
             storage_mode,
             mount_point,
             overlay_modules,

@@ -74,10 +74,21 @@ where
     let mut hymofs_queue: Vec<String> = final_hymofs_ids.iter().cloned().collect();
     hymofs_queue.sort();
 
+    let abi = rustix::system::uname()
+        .machine()
+        .to_string_lossy()
+        .into_owned();
+    let is_x86_64 = abi == "x86_64" || abi == "x86-64";
+
     if !hymofs_queue.is_empty() {
-        let hymofs_need_ids: HashSet<String> = hymofs_queue.into_iter().collect();
-        if let Ok(mounted_ids) = driver.mount_hymofs(&hymofs_need_ids, config, tempdir.as_ref()) {
-            final_hymofs_ids.retain(|id| mounted_ids.contains(id));
+        if !is_x86_64 && config.hymofs.enable {
+            let hymofs_need_ids: HashSet<String> = hymofs_queue.into_iter().collect();
+            if let Ok(mounted_ids) = driver.mount_hymofs(&hymofs_need_ids, config, tempdir.as_ref())
+            {
+                final_hymofs_ids.retain(|id| mounted_ids.contains(id));
+            } else {
+                final_hymofs_ids.clear();
+            }
         } else {
             final_hymofs_ids.clear();
         }

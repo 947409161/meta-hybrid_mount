@@ -9,6 +9,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::{defs, sys::fs::xattr};
 
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+pub struct HymofsState {
+    pub loaded: bool,
+    pub version: i32,
+    pub active_features: Vec<String>,
+    pub error_msg: Option<String>,
+}
+
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct RuntimeState {
     pub timestamp: u64,
@@ -23,6 +31,8 @@ pub struct RuntimeState {
     pub active_mounts: Vec<String>,
     #[serde(default)]
     pub tmpfs_xattr_supported: bool,
+    #[serde(default)]
+    pub hymofs_state: HymofsState,
 }
 
 impl RuntimeState {
@@ -34,6 +44,7 @@ impl RuntimeState {
         magic_modules: Vec<String>,
         hymofs_modules: Vec<String>,
         active_mounts: Vec<String>,
+        hymofs_state: HymofsState,
     ) -> Self {
         let start = SystemTime::now();
 
@@ -56,6 +67,7 @@ impl RuntimeState {
             hymofs_modules,
             active_mounts,
             tmpfs_xattr_supported,
+            hymofs_state,
         }
     }
 

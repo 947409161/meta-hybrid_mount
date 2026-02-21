@@ -54,6 +54,27 @@ impl ModuleRules {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct HymofsConfig {
+    pub enable: bool,
+    pub debug: bool,
+    pub stealth: bool,
+    pub mirror_path: String,
+    pub hide_overlay_xattrs: bool,
+}
+
+impl Default for HymofsConfig {
+    fn default() -> Self {
+        Self {
+            enable: true,
+            debug: false,
+            stealth: true,
+            mirror_path: String::from("/dev/hymo_mirror"),
+            hide_overlay_xattrs: false,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     #[serde(default = "default_moduledir")]
@@ -70,6 +91,8 @@ pub struct Config {
     pub allow_umount_coexistence: bool,
     #[serde(default)]
     pub default_mode: DefaultMode,
+    #[serde(default)]
+    pub hymofs: HymofsConfig,
     #[serde(default)]
     pub rules: HashMap<String, ModuleRules>,
 }
@@ -113,6 +136,7 @@ impl Default for Config {
             disable_umount: false,
             allow_umount_coexistence: false,
             default_mode: DefaultMode::default(),
+            hymofs: HymofsConfig::default(),
             rules: HashMap::new(),
         }
     }

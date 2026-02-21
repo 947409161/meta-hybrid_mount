@@ -10,12 +10,16 @@
     "rebootConfirm": "你确定你想重启系统吗？",
     "reboot": "重启",
     "cancel": "取消",
-    "saved": "已保存"
+    "saved": "已保存",
+    "confirm": "确认",
+    "yes": "是",
+    "no": "否"
   },
   "tabs": {
     "status": "状态",
     "config": "配置",
     "modules": "模块",
+    "hymofs": "HymoFS",
     "info": "关于"
   },
   "status": {
@@ -25,10 +29,12 @@
     "sysInfoTitle": "系统信息",
     "kernel": "内核版本",
     "selinux": "SELinux",
+    "abi": "ABI",
     "mountBase": "挂载基点",
     "activePartitions": "活跃分区"
   },
   "config": {
+    "title": "配置",
     "disableUmount": "禁用Umount",
     "allowUmountCoexistence": "允许Umount共存",
     "coexistenceRequired": "需开启共存选项",
@@ -61,6 +67,21 @@
     "mode_erofs": "EROFS",
     "mode_erofsDesc": "高性能只读文件系统，极大节省空间"
   },
+  "hymofs": {
+    "rmmodTitle": "卸载HymoFS？",
+    "rmmodConfirm": "确定要卸载HymoFS吗？",
+    "rmmodBtn": "卸载HymoFS",
+    "rmmodSuccess": "HymoFS已卸载",
+    "rmmodError": "HymoFS卸载失败",
+    "unsupported": "设备不支持",
+    "unsupportedDesc": "HymoFS目前只支持aarch64设备.",
+    "loaded": "模块",
+    "version": "版本",
+    "debugMode": "Debug Mode",
+    "debugModeDesc": "HymoFS的详细日志",
+    "stealthMode": "Stealth Mode",
+    "stealthModeDesc": "隐藏HymoFS挂载点"
+  },
   "modules": {
     "reload": "刷新",
     "save": "保存配置",
@@ -74,10 +95,12 @@
     "modes": {
       "auto": "OverlayFS",
       "magic": "Magic Mount",
+      "hymofs": "HymoFS",
       "none": "未挂载",
       "short": {
         "auto": "Overlay",
         "magic": "Magic",
+        "hymofs": "HymoFS",
         "ignore": "忽略"
       }
     }
